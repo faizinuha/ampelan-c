@@ -27,6 +27,7 @@ export interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
   updateProfile: (data: Partial<Profile>) => Promise<boolean>;
+  oauthLogin: (provider: string) => Promise<boolean>;
   isLoading: boolean;
 }
 

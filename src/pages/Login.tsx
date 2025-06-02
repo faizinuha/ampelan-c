@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +7,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { LogIn, Mail, Lock } from 'lucide-react';
+import { FaGoogle, FaFacebook } from 'react-icons/fa';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, isLoading } = useAuth();
+  const { login, oauthLogin, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -40,6 +40,31 @@ const Login = () => {
       toast({
         title: "Login Gagal",
         description: "Email atau password tidak valid",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleOAuthLogin = async (provider: 'google' | 'facebook') => {
+    try {
+      const success = await oauthLogin(provider);
+      if (success) {
+        toast({
+          title: "Berhasil!",
+          description: `Anda berhasil masuk menggunakan ${provider}`,
+        });
+        navigate('/');
+      } else {
+        toast({
+          title: "Login Gagal",
+          description: `Gagal masuk menggunakan ${provider}`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Terjadi kesalahan saat login menggunakan ${provider}`,
         variant: "destructive",
       });
     }
@@ -106,6 +131,26 @@ const Login = () => {
                 {isLoading ? 'Memproses...' : 'Masuk'}
               </Button>
             </form>
+
+            <div className="mt-6 flex justify-center space-x-4">
+              <Button
+                onClick={() => handleOAuthLogin('google')}
+                className="bg-red-600 hover:bg-red-700 flex items-center justify-center space-x-2"
+                aria-label="Login dengan Google"
+              >
+                <FaGoogle className="w-5 h-5" />
+                <span>Google</span>
+              </Button>
+
+              <Button
+                onClick={() => handleOAuthLogin('facebook')}
+                className="bg-blue-700 hover:bg-blue-800 flex items-center justify-center space-x-2"
+                aria-label="Login dengan Facebook"
+              >
+                <FaFacebook className="w-5 h-5" />
+                <span>Facebook</span>
+              </Button>
+            </div>
 
             <div className="mt-6">
               <div className="relative">

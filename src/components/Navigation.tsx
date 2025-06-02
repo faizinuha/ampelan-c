@@ -37,10 +37,10 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/" className="hover:text-yellow-300 transition-colors">Beranda</Link>
-            <Link to="/about" className="hover:text-yellow-300 transition-colors">Tentang</Link>
-            <Link to="/services" className="hover:text-yellow-300 transition-colors">Layanan</Link>
-            <Link to="/news" className="hover:text-yellow-300 transition-colors">Berita</Link>
-            <Link to="/contact" className="hover:text-yellow-300 transition-colors">Kontak</Link>
+            <Link to="/" className="hover:text-yellow-300 transition-colors">Tentang</Link>
+            <Link to="/" className="hover:text-yellow-300 transition-colors">Layanan</Link>
+            <Link to="/" className="hover:text-yellow-300 transition-colors">Berita</Link>
+            <Link to="/" className="hover:text-yellow-300 transition-colors">Kontak</Link>
           </div>
 
           {/* User Actions */}

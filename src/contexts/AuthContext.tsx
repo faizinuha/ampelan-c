@@ -114,11 +114,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat login",
+        description: error.message || "Terjadi kesalahan saat login",
         variant: "destructive",
       });
       return false;
@@ -155,14 +155,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Berhasil!",
           description: "Akun berhasil dibuat. Silakan cek email untuk verifikasi.",
         });
+        // Automatically fetch profile after successful registration
+        setTimeout(() => {
+          if (data.user) fetchProfile(data.user.id);
+        }, 0);
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: any) { // Added type annotation
       console.error('Register error:', error);
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat mendaftar",
+        description: error.message || "Terjadi kesalahan saat mendaftar", // Improved error message
         variant: "destructive",
       });
       return false;
@@ -216,6 +220,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Add oauthLogin implementation
+  const oauthLogin = async (provider: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider as any, // Type assertion might be needed based on Supabase types
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // OAuth sign-in typically handles session/user via the redirect and auth state change listener
+      // No explicit user/profile setting needed here, it's handled by the effect hook.
+      
+      // The redirect will happen, so no need for a success toast here.
+      return true;
+    } catch (error: any) {
+      console.error('OAuth Login error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Terjadi kesalahan saat login via OAuth",
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      // isLoading will be set to false by the auth state change listener
+      // setIsLoading(false);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -224,6 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       register, 
       logout, 
       updateProfile,
+      oauthLogin, // Added oauthLogin
       isLoading 
     }}>
       {children}
