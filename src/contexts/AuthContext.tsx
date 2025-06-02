@@ -114,11 +114,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       return false;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Login error:', error);
       toast({
         title: "Error",
-        description: error.message || "Terjadi kesalahan saat login",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat login",
         variant: "destructive",
       });
       return false;
@@ -162,11 +162,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       return false;
-    } catch (error: any) { // Added type annotation
+    } catch (error: unknown) {
       console.error('Register error:', error);
       toast({
         title: "Error",
-        description: error.message || "Terjadi kesalahan saat mendaftar", // Improved error message
+        description: (error instanceof Error ? error.message : "Terjadi kesalahan saat mendaftar"),
         variant: "destructive",
       });
       return false;
@@ -225,7 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider as any, // Type assertion might be needed based on Supabase types
+        provider: provider as Parameters<typeof supabase.auth.signInWithOAuth>[0]['provider'],
         options: {
           redirectTo: `${window.location.origin}/`
         }
@@ -245,11 +245,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // The redirect will happen, so no need for a success toast here.
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('OAuth Login error:', error);
       toast({
         title: "Error",
-        description: error.message || "Terjadi kesalahan saat login via OAuth",
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat login via OAuth",
         variant: "destructive",
       });
       return false;
