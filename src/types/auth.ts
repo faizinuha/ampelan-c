@@ -10,11 +10,11 @@ export interface User {
 export interface Profile {
   id: string;
   full_name: string;
-  phone?: string;
-  address?: string;
-  rt_rw?: string;
-  occupation?: string;
-  avatar_url?: string;
+  phone?: string | null;
+  address?: string | null;
+  rt_rw?: string | null;
+  occupation?: string | null;
+  avatar_url?: string | null;
   role: 'admin' | 'user';
   created_at: string;
   updated_at: string;
@@ -36,7 +36,7 @@ export interface Notification {
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
   target_audience: 'all' | 'admin' | 'user';
-  created_by?: string;
+  created_by?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -47,7 +47,7 @@ export interface UserNotification {
   user_id: string;
   notification_id: string;
   is_read: boolean;
-  read_at?: string;
+  read_at?: string | null;
   created_at: string;
   notification?: Notification;
 }

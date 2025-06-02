@@ -1,58 +1,74 @@
-
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Users, 
-  FileText, 
-  Bell, 
-  BarChart3, 
-  Settings,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  CheckCircle,
-  XCircle
-} from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { Users, Bell, FileText, BarChart3, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, Notification } from '@/types/auth';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 const Admin = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
   const { toast } = useToast();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    activeNotifications: 0,
+    totalDocuments: 0
+  });
+  const [users, setUsers] = useState<Profile[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [newNotification, setNewNotification] = useState({
     title: '',
     message: '',
-    type: 'info',
-    target_audience: 'all'
-  });
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalAdmins: 0,
-    activeNotifications: 0,
-    totalNotifications: 0
+    type: 'info' as 'info' | 'success' | 'warning' | 'error',
+    target_audience: 'all' as 'all' | 'admin' | 'user'
   });
 
-  // Redirect if not admin
-  if (!user || user.role !== 'admin') {
-    navigate('/');
-    return null;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Memuat...</p>
+        </div>
+      </div>
+    );
   }
 
-  const fetchProfiles = async () => {
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
+
+  const fetchStats = async () => {
+    try {
+      const { count: userCount } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: notificationCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      setStats({
+        totalUsers: userCount || 0,
+        activeNotifications: notificationCount || 0,
+        totalDocuments: 0
+      });
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -60,14 +76,16 @@ const Admin = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProfiles(data || []);
       
-      // Update stats
-      const totalUsers = data?.length || 0;
-      const totalAdmins = data?.filter(p => p.role === 'admin').length || 0;
-      setStats(prev => ({ ...prev, totalUsers, totalAdmins }));
+      // Type cast the data to ensure it matches our Profile interface
+      const typedUsers: Profile[] = data?.map(user => ({
+        ...user,
+        role: user.role as 'admin' | 'user'
+      })) || [];
+      
+      setUsers(typedUsers);
     } catch (error) {
-      console.error('Error fetching profiles:', error);
+      console.error('Error fetching users:', error);
     }
   };
 
@@ -79,52 +97,46 @@ const Admin = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNotifications(data || []);
       
-      // Update stats
-      const activeNotifications = data?.filter(n => n.is_active).length || 0;
-      const totalNotifications = data?.length || 0;
-      setStats(prev => ({ ...prev, activeNotifications, totalNotifications }));
+      // Type cast the data to ensure it matches our Notification interface
+      const typedNotifications: Notification[] = data?.map(notification => ({
+        ...notification,
+        type: notification.type as 'info' | 'success' | 'warning' | 'error',
+        target_audience: notification.target_audience as 'all' | 'admin' | 'user'
+      })) || [];
+      
+      setNotifications(typedNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
   };
 
   useEffect(() => {
-    fetchProfiles();
+    fetchStats();
+    fetchUsers();
     fetchNotifications();
   }, []);
 
-  const handleCreateNotification = async () => {
-    if (!newNotification.title || !newNotification.message) {
-      toast({
-        title: "Error",
-        description: "Harap isi judul dan pesan notifikasi",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const createNotification = async () => {
     try {
       const { error } = await supabase
         .from('notifications')
-        .insert({
-          title: newNotification.title,
-          message: newNotification.message,
-          type: newNotification.type,
-          target_audience: newNotification.target_audience,
-          created_by: user.id
-        });
+        .insert([newNotification]);
 
       if (error) throw error;
 
       toast({
         title: "Berhasil!",
-        description: "Notifikasi berhasil dibuat dan dikirim",
+        description: "Notifikasi berhasil dibuat",
       });
 
-      setNewNotification({ title: '', message: '', type: 'info', target_audience: 'all' });
       fetchNotifications();
+      setNewNotification({
+        title: '',
+        message: '',
+        type: 'info',
+        target_audience: 'all'
+      });
     } catch (error) {
       console.error('Error creating notification:', error);
       toast({
@@ -135,315 +147,261 @@ const Admin = () => {
     }
   };
 
-  const toggleNotificationStatus = async (notificationId: string, currentStatus: boolean) => {
+  const toggleNotification = async (notification: Notification) => {
     try {
       const { error } = await supabase
         .from('notifications')
-        .update({ is_active: !currentStatus })
-        .eq('id', notificationId);
+        .update({ is_active: !notification.is_active })
+        .eq('id', notification.id);
 
       if (error) throw error;
 
       toast({
         title: "Berhasil!",
-        description: `Notifikasi berhasil ${!currentStatus ? 'diaktifkan' : 'dinonaktifkan'}`,
+        description: "Status notifikasi berhasil diubah",
       });
 
       fetchNotifications();
     } catch (error) {
-      console.error('Error updating notification:', error);
+      console.error('Error toggling notification:', error);
       toast({
         title: "Error",
-        description: "Gagal mengupdate notifikasi",
+        description: "Gagal mengubah status notifikasi",
         variant: "destructive",
       });
     }
   };
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const deleteNotification = async (notification: Notification) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notification.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil!",
+        description: "Notifikasi berhasil dihapus",
+      });
+
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus notifikasi",
+        variant: "destructive",
+      });
+    }
   };
 
-  const statsCards = [
-    { title: 'Total Pengguna', value: stats.totalUsers.toString(), icon: Users, color: 'bg-blue-100 text-blue-600' },
-    { title: 'Administrator', value: stats.totalAdmins.toString(), icon: Settings, color: 'bg-purple-100 text-purple-600' },
-    { title: 'Notifikasi Aktif', value: stats.activeNotifications.toString(), icon: Bell, color: 'bg-green-100 text-green-600' },
-    { title: 'Total Notifikasi', value: stats.totalNotifications.toString(), icon: BarChart3, color: 'bg-yellow-100 text-yellow-600' }
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <Settings className="w-8 h-8 mr-3 text-green-600" />
-            Dashboard Admin
-          </h1>
-          <p className="text-gray-600 mt-2">Kelola sistem dan layanan Desa Ampelan</p>
+          <h1 className="text-3xl font-bold text-gray-900">Panel Admin</h1>
+          <p className="text-gray-600 mt-2">Kelola pengguna, notifikasi, dan lainnya</p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statsCards.map((stat, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                    <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
-                  </div>
-                  <div className={`p-3 rounded-full ${stat.color}`}>
-                    <stat.icon className="w-6 h-6" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Main Content */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full lg:w-auto grid-cols-2 lg:grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Pengguna</TabsTrigger>
-            <TabsTrigger value="notifications">Notifikasi</TabsTrigger>
-            <TabsTrigger value="settings">Pengaturan</TabsTrigger>
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList>
+            <TabsTrigger value="dashboard">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="users">
+              <Users className="w-4 h-4 mr-2" />
+              Pengguna
+            </TabsTrigger>
+            <TabsTrigger value="notifications">
+              <Bell className="w-4 h-4 mr-2" />
+              Notifikasi
+            </TabsTrigger>
+            <TabsTrigger value="documents">
+              <FileText className="w-4 h-4 mr-2" />
+              Dokumen
+            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Users */}
+          <TabsContent value="dashboard" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="w-5 h-5 mr-2" />
-                    Pengguna Terbaru
-                  </CardTitle>
+                  <CardTitle>Total Pengguna</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {profiles.slice(0, 5).map((profile) => (
-                      <div key={profile.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
-                            <AvatarFallback className="bg-green-100 text-green-700">
-                              {getInitials(profile.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{profile.full_name}</p>
-                            <p className="text-sm text-gray-600">{profile.phone || 'No phone'}</p>
-                          </div>
-                        </div>
-                        <Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>
-                          {profile.role === 'admin' ? 'Admin' : 'Warga'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="text-2xl font-bold">{stats.totalUsers}</div>
                 </CardContent>
               </Card>
-
-              {/* Recent Notifications */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Bell className="w-5 h-5 mr-2" />
-                    Notifikasi Terbaru
-                  </CardTitle>
+                  <CardTitle>Notifikasi Aktif</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {notifications.slice(0, 5).map((notification) => (
-                      <div key={notification.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{notification.title}</p>
-                          <p className="text-sm text-gray-600">{notification.target_audience}</p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={notification.is_active ? 'default' : 'secondary'}>
-                            {notification.is_active ? 'Aktif' : 'Nonaktif'}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="text-2xl font-bold">{stats.activeNotifications}</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Total Dokumen</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalDocuments}</div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
-
-          <TabsContent value="users" className="space-y-6">
+          <TabsContent value="users" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Manajemen Pengguna</CardTitle>
+                <CardTitle>Daftar Pengguna</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {profiles.map((profile) => (
-                    <div key={profile.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
-                          <AvatarFallback className="bg-green-100 text-green-700">
-                            {getInitials(profile.full_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{profile.full_name}</p>
-                          <p className="text-sm text-gray-600">{profile.phone || 'Tidak ada nomor telepon'}</p>
-                          <p className="text-sm text-gray-600">{profile.address || 'Tidak ada alamat'}</p>
-                          <p className="text-xs text-gray-500">Bergabung: {new Date(profile.created_at).toLocaleDateString('id-ID')}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={profile.role === 'admin' ? 'default' : 'secondary'}>
-                          {profile.role === 'admin' ? 'Admin' : 'Warga'}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Bergabung</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.full_name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                            {user.role === 'admin' ? 'Admin' : 'Warga'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(user.created_at).toLocaleDateString('id-ID')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="notifications" className="space-y-6">
+          <TabsContent value="notifications" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Buat Notifikasi Baru</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="notif-title">Judul</Label>
-                  <Input
-                    id="notif-title"
-                    value={newNotification.title}
-                    onChange={(e) => setNewNotification({...newNotification, title: e.target.value})}
-                    placeholder="Masukkan judul notifikasi"
-                  />
+                <div className="flex items-center justify-between">
+                  <CardTitle>Kelola Notifikasi</CardTitle>
+                  <Button onClick={() => {}}><Plus className="w-4 h-4 mr-2" /> Buat Notifikasi</Button>
                 </div>
-                <div>
-                  <Label htmlFor="notif-message">Pesan</Label>
-                  <Textarea
-                    id="notif-message"
-                    value={newNotification.message}
-                    onChange={(e) => setNewNotification({...newNotification, message: e.target.value})}
-                    placeholder="Masukkan pesan notifikasi"
-                    rows={4}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="notif-type">Tipe</Label>
-                    <select
-                      id="notif-type"
-                      value={newNotification.type}
-                      onChange={(e) => setNewNotification({...newNotification, type: e.target.value})}
-                      className="w-full p-2 border rounded-md"
-                    >
-                      <option value="info">Info</option>
-                      <option value="success">Success</option>
-                      <option value="warning">Warning</option>
-                      <option value="error">Error</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="notif-audience">Target</Label>
-                    <select
-                      id="notif-audience"
-                      value={newNotification.target_audience}
-                      onChange={(e) => setNewNotification({...newNotification, target_audience: e.target.value})}
-                      className="w-full p-2 border rounded-md"
-                    >
-                      <option value="all">Semua</option>
-                      <option value="user">Warga</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                </div>
-                <Button onClick={handleCreateNotification} className="bg-green-600 hover:bg-green-700">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Kirim Notifikasi
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Kelola Notifikasi</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {notifications.map((notification) => (
-                    <div key={notification.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <h4 className="font-medium">{notification.title}</h4>
-                          <Badge variant="outline">{notification.type}</Badge>
-                          <Badge variant="outline">{notification.target_audience}</Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(notification.created_at).toLocaleDateString('id-ID', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={notification.is_active ? 'default' : 'secondary'}>
-                          {notification.is_active ? 'Aktif' : 'Nonaktif'}
-                        </Badge>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => toggleNotificationStatus(notification.id, notification.is_active)}
-                        >
-                          {notification.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pengaturan Sistem</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="site-name">Nama Situs</Label>
-                      <Input id="site-name" defaultValue="Desa Ampelan" />
-                    </div>
-                    <div>
-                      <Label htmlFor="admin-email">Email Admin</Label>
-                      <Input id="admin-email" defaultValue="admin@ampelan.com" />
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <Label htmlFor="site-description">Deskripsi Situs</Label>
-                    <Textarea
-                      id="site-description"
-                      defaultValue="Portal resmi Desa Ampelan untuk pelayanan masyarakat"
-                      rows={3}
+                    <Label htmlFor="title">Judul</Label>
+                    <Input
+                      id="title"
+                      value={newNotification.title}
+                      onChange={(e) => setNewNotification({ ...newNotification, title: e.target.value })}
                     />
                   </div>
-                  <Button className="bg-green-600 hover:bg-green-700">
-                    Simpan Pengaturan
-                  </Button>
+                  <div>
+                    <Label htmlFor="type">Tipe</Label>
+                    <Select onValueChange={(value) => setNewNotification({ ...newNotification, type: value as 'info' | 'success' | 'warning' | 'error' })}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih tipe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="success">Sukses</SelectItem>
+                        <SelectItem value="warning">Peringatan</SelectItem>
+                        <SelectItem value="error">Error</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="message">Pesan</Label>
+                    <Textarea
+                      id="message"
+                      value={newNotification.message}
+                      onChange={(e) => setNewNotification({ ...newNotification, message: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="target_audience">Target Audience</Label>
+                    <Select onValueChange={(value) => setNewNotification({ ...newNotification, target_audience: value as 'all' | 'admin' | 'user' })}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih target" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Semua</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="user">Pengguna</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                <Button onClick={createNotification} className="w-full">Buat Notifikasi</Button>
+
+                <div className="mt-8">
+                  <h3 className="text-xl font-semibold mb-4">Daftar Notifikasi</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Judul</TableHead>
+                        <TableHead>Tipe</TableHead>
+                        <TableHead>Target</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Aksi</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {notifications.map((notification) => (
+                        <TableRow key={notification.id}>
+                          <TableCell>{notification.title}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              notification.type === 'success' ? 'success' :
+                              notification.type === 'warning' ? 'warning' :
+                              notification.type === 'error' ? 'destructive' :
+                              'secondary'
+                            }>
+                              {notification.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{notification.target_audience}</TableCell>
+                          <TableCell>
+                            <Badge variant={notification.is_active ? 'default' : 'outline'}>
+                              {notification.is_active ? 'Aktif' : 'Tidak Aktif'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => toggleNotification(notification)}>
+                              {notification.is_active ? <Trash2 className="w-4 h-4 mr-2" /> : <Bell className="w-4 h-4 mr-2" />}
+                              {notification.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => deleteNotification(notification)}>
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Hapus
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="documents" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Kelola Dokumen</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p>Fitur ini belum tersedia.</p>
               </CardContent>
             </Card>
           </TabsContent>

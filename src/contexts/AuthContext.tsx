@@ -31,16 +31,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
       
       if (error) throw error;
-      setProfile(data);
+      
+      // Type cast the data to ensure it matches our Profile interface
+      const profileData: Profile = {
+        ...data,
+        role: data.role as 'admin' | 'user'
+      };
+      
+      setProfile(profileData);
       
       // Update user state with profile data
-      if (data) {
+      if (profileData) {
         setUser({
-          id: data.id,
+          id: profileData.id,
           email: session?.user?.email || '',
-          name: data.full_name,
-          role: data.role as 'admin' | 'user',
-          avatar: data.avatar_url
+          name: profileData.full_name,
+          role: profileData.role,
+          avatar: profileData.avatar_url || undefined
         });
       }
     } catch (error) {

@@ -36,8 +36,8 @@ const NotificationCenter = () => {
 
       if (userNotifError) throw userNotifError;
 
-      // Combine notifications with read status
-      const combinedNotifications = notificationsData?.map(notification => {
+      // Combine notifications with read status and type cast
+      const combinedNotifications: UserNotification[] = notificationsData?.map(notification => {
         const userNotif = userNotifData?.find(un => un.notification_id === notification.id);
         return {
           id: userNotif?.id || '',
@@ -46,7 +46,11 @@ const NotificationCenter = () => {
           is_read: userNotif?.is_read || false,
           read_at: userNotif?.read_at,
           created_at: userNotif?.created_at || notification.created_at,
-          notification: notification
+          notification: {
+            ...notification,
+            type: notification.type as 'info' | 'success' | 'warning' | 'error',
+            target_audience: notification.target_audience as 'all' | 'admin' | 'user'
+          }
         };
       }) || [];
 
