@@ -46,29 +46,41 @@ const Login = () => {
   };
 
   const handleOAuthLogin = async (provider: 'google' | 'facebook') => {
-    try {
-      const success = await oauthLogin(provider);
-      if (success) {
-        toast({
-          title: "Berhasil!",
-          description: `Anda berhasil masuk menggunakan ${provider}`,
-        });
-        navigate('/');
-      } else {
-        toast({
-          title: "Login Gagal",
-          description: `Gagal masuk menggunakan ${provider}`,
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+  try {
+    if (provider === 'facebook') {
+      alert('Coming soon.. ' + provider + ' belum tersedia');
+      return;
+    }
+    const success = await oauthLogin(provider);
+    
+    if (success) {
+      window.alert(`Sedang Memproses.. ${provider}. `);
+      // toast({
+      //   title: "Loading..",
+      //   description: `Sedang memproses login dengan ${provider}.`,
+      //   duration: 100000,
+      // })
       toast({
-        title: "Error",
-        description: `Terjadi kesalahan saat login menggunakan ${provider}`,
+        title: "Berhasil!",
+        description: `Anda berhasil masuk menggunakan ${provider}`,
+      });
+      navigate('/');
+    } else {
+      toast({
+        title: "Login Gagal",
+        description: `Gagal masuk menggunakan ${provider}`,
         variant: "destructive",
       });
     }
-  };
+  } catch (error) {
+    toast({
+      title: "Error",
+      description: `Terjadi kesalahan saat login menggunakan ${provider}`,
+      variant: "destructive",
+    });
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -162,7 +174,7 @@ const Login = () => {
                 </div>
               </div>
 
-              <div className="mt-4 space-y-2">
+              {/* <div className="mt-4 space-y-2">
                 <div className="bg-blue-50 p-3 rounded-lg">
                   <p className="text-sm font-medium text-blue-800">Admin:</p>
                   <p className="text-xs text-blue-600">
@@ -175,7 +187,7 @@ const Login = () => {
                     Email: [email apapun] | Password: user123
                   </p>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             <div className="mt-6 text-center">
