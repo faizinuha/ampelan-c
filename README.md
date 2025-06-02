@@ -1,73 +1,148 @@
-# Welcome to your Lovable project
+# Website Desa Ampelan 🌿
 
-## Project info
+![Banner Desa Ampelan](assets/fotange.jpeg)
 
-**URL**: https://lovable.dev/projects/b768c7f0-b72f-4356-8cc9-b60f8b736cd3
+Sebuah platform digital modern untuk Desa Ampelan yang menghubungkan warga dengan layanan desa secara efisien dan transparan.
 
-## How can I edit this code?
+## 🌟 Fitur Utama
 
-There are several ways of editing your application.
+### 📱 Portal Warga
+- **Layanan Online** - Pengurusan surat dan dokumen secara digital
+- **Informasi Terkini** - Berita dan pengumuman desa terupdate
+- **Notifikasi Langsung** - Pemberitahuan penting untuk warga
+- **Profil Digital** - Manajemen data pribadi warga
 
-**Use Lovable**
+### 👨‍💼 Panel Admin
+- **Dashboard Informatif** - Statistik dan metrik penting desa
+- **Manajemen Berita** - Publikasi dan pengelolaan informasi
+- **Sistem Notifikasi** - Pengiriman pengumuman ke warga
+- **Pengelolaan Dokumen** - Arsip digital surat dan dokumen
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b768c7f0-b72f-4356-8cc9-b60f8b736cd3) and start prompting.
+## 🎯 Tujuan Proyek
 
-Changes made via Lovable will be committed automatically to this repo.
+Website Desa Ampelan bertujuan untuk:
+1. Mempermudah akses layanan desa
+2. Meningkatkan transparansi informasi
+3. Mengoptimalkan komunikasi desa-warga
+4. Modernisasi sistem administrasi
+5. Mendokumentasikan kegiatan desa
 
-**Use your preferred IDE**
+## 🛠️ Teknologi
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Frontend
+- **React** - Library JavaScript untuk UI yang dinamis
+- **TypeScript** - Untuk pengembangan yang lebih aman
+- **Tailwind CSS** - Framework CSS untuk desain modern
+- **Shadcn UI** - Komponen UI yang cantik dan customizable
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Backend & Database
+- **Supabase** - Backend-as-a-Service untuk:
+  - Autentikasi
+  - Database PostgreSQL
+  - Storage
+  - Realtime subscriptions
 
-Follow these steps:
+## 🚀 Cara Menjalankan Proyek
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Prerequisites
+- Node.js (v18+)
+- npm atau pnpm
+- Git
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Langkah Instalasi
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Clone repository
+```bash
+git clone https://github.com/your-username/ampelan-c.git
+cd ampelan-c
 ```
 
-**Edit a file directly in GitHub**
+2. Install dependencies
+```bash
+npm install
+# atau
+pnpm install
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Setup environment variables
+```bash
+cp .env.example .env
+```
+Isi dengan kredensial Supabase Anda
 
-**Use GitHub Codespaces**
+4. Jalankan development server
+```bash
+npm run dev
+# atau
+pnpm dev
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📦 Struktur Proyek
 
-## What technologies are used for this project?
+```
+src/
+├── components/     # Komponen UI yang reusable
+├── contexts/       # React contexts (auth, theme, dll)
+├── hooks/         # Custom React hooks
+├── integrations/  # Integrasi dengan layanan eksternal
+├── lib/           # Utilities dan helpers
+├── pages/         # Halaman aplikasi
+└── types/         # TypeScript type definitions
+```
 
-This project is built with:
+## 🔐 Manajemen Akses
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Sistem menggunakan role-based access control:
 
-## How can I deploy this project?
+### 👥 Role Pengguna
+- **Admin Desa**
+  - Akses penuh ke dashboard admin
+  - Manajemen berita dan pengumuman
+  - Pengelolaan data warga
+  - Verifikasi dokumen
 
-Simply open [Lovable](https://lovable.dev/projects/b768c7f0-b72f-4356-8cc9-b60f8b736cd3) and click on Share -> Publish.
+- **Warga**
+  - Akses ke layanan online
+  - Melihat berita dan pengumuman
+  - Mengajukan permohonan surat
+  - Manajemen profil pribadi
 
-## Can I connect a custom domain to my Lovable project?
+## 📱 Tampilan & Fitur
 
-Yes, you can!
+### Beranda
+- Hero section dengan informasi desa
+- Statistik desa (jumlah penduduk, RT/RW, dll)
+- Berita dan kegiatan terbaru
+- Layanan yang tersedia
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Panel Admin
+- Dashboard dengan metrik penting
+- Manajemen berita dan pengumuman
+- Sistem notifikasi
+- Pengelolaan dokumen digital
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Area Warga
+- Profil digital
+- Riwayat layanan
+- Notifikasi
+- Pengajuan dokumen
+
+## 🤝 Kontribusi
+
+Kami sangat terbuka untuk kontribusi! Jika Anda ingin berkontribusi:
+
+1. Fork repository ini
+2. Buat branch baru (`git checkout -b fitur-baru`)
+3. Commit perubahan (`git commit -m 'Menambah fitur baru'`)
+4. Push ke branch (`git push origin fitur-baru`)
+5. Buat Pull Request
+
+## 📄 Lisensi
+
+Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) untuk detail.
+
+## 📞 Kontak
+
+Untuk pertanyaan dan dukungan, silakan hubungi:
+- Email: admin@desa-ampelan.id
+- Website: https://desa-ampelan.id
