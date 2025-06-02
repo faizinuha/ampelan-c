@@ -7,11 +7,26 @@ export interface User {
   avatar?: string;
 }
 
+export interface Profile {
+  id: string;
+  full_name: string;
+  phone?: string;
+  address?: string;
+  rt_rw?: string;
+  occupation?: string;
+  avatar_url?: string;
+  role: 'admin' | 'user';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => void;
+  updateProfile: (data: Partial<Profile>) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -20,6 +35,19 @@ export interface Notification {
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
-  date: string;
-  isRead: boolean;
+  target_audience: 'all' | 'admin' | 'user';
+  created_by?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserNotification {
+  id: string;
+  user_id: string;
+  notification_id: string;
+  is_read: boolean;
+  read_at?: string;
+  created_at: string;
+  notification?: Notification;
 }

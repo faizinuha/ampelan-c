@@ -1,19 +1,25 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, LogOut, Settings } from 'lucide-react';
+import { Menu, X, LogOut, Settings, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import NotificationCenter from './NotificationCenter';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/');
+    setIsMenuOpen(false);
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
   return (
@@ -44,13 +50,24 @@ const Navigation = () => {
                 <NotificationCenter />
                 
                 <div className="flex items-center space-x-2">
-                  <img 
-                    src={user.avatar || '/placeholder.svg'} 
-                    alt={user.name}
-                    className="w-8 h-8 rounded-full"
-                  />
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={profile?.avatar_url} alt={user.name} />
+                    <AvatarFallback className="bg-yellow-500 text-green-800 text-xs">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="text-sm">{user.name}</span>
                 </div>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate('/profile')}
+                  className="text-white hover:text-yellow-300"
+                >
+                  <User className="w-4 h-4 mr-1" />
+                  Profil
+                </Button>
 
                 {user.role === 'admin' && (
                   <Button 
@@ -95,7 +112,8 @@ const Navigation = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center space-x-2">
+            {user && <NotificationCenter />}
             <Button 
               variant="ghost" 
               size="sm" 
@@ -111,27 +129,75 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden bg-green-700 rounded-lg mt-2 p-4">
             <div className="flex flex-col space-y-4">
-              <Link to="/" className="hover:text-yellow-300 transition-colors">Beranda</Link>
-              <Link to="/about" className="hover:text-yellow-300 transition-colors">Tentang</Link>
-              <Link to="/services" className="hover:text-yellow-300 transition-colors">Layanan</Link>
-              <Link to="/news" className="hover:text-yellow-300 transition-colors">Berita</Link>
-              <Link to="/contact" className="hover:text-yellow-300 transition-colors">Kontak</Link>
+              <Link 
+                to="/" 
+                className="hover:text-yellow-300 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Beranda
+              </Link>
+              <Link 
+                to="/about" 
+                className="hover:text-yellow-300 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Tentang
+              </Link>
+              <Link 
+                to="/services" 
+                className="hover:text-yellow-300 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Layanan
+              </Link>
+              <Link 
+                to="/news" 
+                className="hover:text-yellow-300 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Berita
+              </Link>
+              <Link 
+                to="/contact" 
+                className="hover:text-yellow-300 transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Kontak
+              </Link>
               
               {user ? (
                 <div className="border-t border-green-600 pt-4 flex flex-col space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <img 
-                      src={user.avatar || '/placeholder.svg'} 
-                      alt={user.name}
-                      className="w-8 h-8 rounded-full"
-                    />
+                  <div className="flex items-center space-x-2 pb-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={profile?.avatar_url} alt={user.name} />
+                      <AvatarFallback className="bg-yellow-500 text-green-800 text-xs">
+                        {getInitials(user.name)}
+                      </AvatarFallback>
+                    </Avatar>
                     <span>{user.name}</span>
                   </div>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      navigate('/profile');
+                      setIsMenuOpen(false);
+                    }}
+                    className="text-white hover:text-yellow-300 justify-start"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Profil Saya
+                  </Button>
+                  
                   {user.role === 'admin' && (
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => navigate('/admin')}
+                      onClick={() => {
+                        navigate('/admin');
+                        setIsMenuOpen(false);
+                      }}
                       className="text-white hover:text-yellow-300 justify-start"
                     >
                       <Settings className="w-4 h-4 mr-2" />
@@ -153,14 +219,20 @@ const Navigation = () => {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => navigate('/login')}
+                    onClick={() => {
+                      navigate('/login');
+                      setIsMenuOpen(false);
+                    }}
                     className="text-white hover:text-yellow-300 justify-start"
                   >
                     Masuk
                   </Button>
                   <Button 
                     size="sm" 
-                    onClick={() => navigate('/register')}
+                    onClick={() => {
+                      navigate('/register');
+                      setIsMenuOpen(false);
+                    }}
                     className="bg-yellow-500 text-green-800 hover:bg-yellow-400"
                   >
                     Daftar
