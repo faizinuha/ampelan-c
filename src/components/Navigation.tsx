@@ -56,7 +56,7 @@ const Navigation = () => {
                       {getInitials(user.name)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm">{profile.full_name}</span>
+                  <span className="text-sm">{user.name}</span>
                 </div>
 
                 <Button 

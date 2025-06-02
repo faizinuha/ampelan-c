@@ -1,6 +1,8 @@
-import { Button } from '@/components/ui/button';
+
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, Calendar, MapPin, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, MapPin, Users, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
@@ -9,78 +11,56 @@ const Home = () => {
       id: 1,
       title: 'Musyawarah Desa Tentang Pembangunan Jalan',
       date: '2025-06-15',
-      excerpt:
-        'Akan dilaksanakan musyawarah desa untuk membahas rencana pembangunan jalan di RT 03/RW 02.',
-      image:
-        'https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // gambar rapat/musyawarah
-      category: 'Musyawarah',
-      avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+      excerpt: 'Akan dilaksanakan musyawarah desa untuk membahas rencana pembangunan jalan di RT 03/RW 02.',
+      image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
       id: 2,
       title: 'Program Bantuan Sembako',
       date: '2025-06-10',
-      excerpt:
-        'Distribusi bantuan sembako untuk keluarga kurang mampu akan dimulai minggu depan.',
-      image:
-        'https://images.unsplash.com/photo-1606788075761-9c3e1c7c7b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // gambar sembako
-      category: 'Bantuan',
-      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+      excerpt: 'Distribusi bantuan sembako untuk keluarga kurang mampu akan dimulai minggu depan.',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
     },
     {
       id: 3,
       title: 'Gotong Royong Pembersihan Sungai',
       date: '2025-06-08',
-      excerpt:
-        'Kegiatan gotong royong pembersihan sungai diikuti oleh 150 warga desa dengan antusias.',
-      image:
-        'https://images.unsplash.com/photo-1464983953574-0892a716854b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // gambar kerja bakti sungai
-      category: 'Gotong Royong',
-      avatar: 'https://randomuser.me/api/portraits/men/65.jpg',
-    },
+      excerpt: 'Kegiatan gotong royong pembersihan sungai diikuti oleh 150 warga desa dengan antusias.',
+      image: 'https://images.unsplash.com/photo-1472396961693-142e6e269027?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    }
   ];
 
   const services = [
     {
       title: 'Surat Keterangan',
-      description:
-        'Pengurusan berbagai surat keterangan resmi untuk keperluan administrasi',
+      description: 'Pengurusan berbagai surat keterangan resmi',
       icon: '📄',
-      image:
-        'https://images.unsplash.com/photo-1554774853-719586f82d77?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-      badge: 'Populer',
+      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
     },
     {
       title: 'Surat Domisili',
-      description:
-        'Surat keterangan tempat tinggal untuk keperluan identitas resmi',
+      description: 'Surat keterangan tempat tinggal',
       icon: '🏠',
-      image:
-        'https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-      badge: 'Cepat',
+      image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
     },
     {
       title: 'Surat Usaha',
-      description: 'Surat keterangan usaha untuk UMKM dan pengembangan bisnis',
+      description: 'Surat keterangan usaha untuk UMKM',
       icon: '💼',
-      image:
-        'https://images.unsplash.com/photo-1542744094-24638eff58bb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-      badge: 'UMKM',
+      image: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
     },
     {
       title: 'Bantuan Sosial',
-      description: 'Informasi dan pendaftaran bantuan untuk masyarakat',
+      description: 'Informasi dan pendaftaran bantuan',
       icon: '🤝',
-      image:
-        'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-      badge: 'Prioritas',
-    },
+      image: 'https://images.unsplash.com/photo-1500673922987-e212871fec22?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    }
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
       {/* Hero Section with Village Background */}
- <section className="relative bg-gradient-to-r from-green-600 to-green-800 text-white py-20 overflow-hidden">
+      <section className="relative bg-gradient-to-r from-green-600 to-green-800 text-white py-20 overflow-hidden">
         <div className="absolute inset-0">
           <img 
             src="https://images.unsplash.com/photo-1500673922987-e212871fec22?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
@@ -108,23 +88,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      <style >{`
-        @keyframes ken-burns {
-          0% {
-            transform: scale(1.05);
-          }
-          50% {
-            transform: scale(1.15);
-          }
-          100% {
-            transform: scale(1.05);
-          }
-        }
-        .animate-ken-burns {
-          animation: ken-burns 20s ease-in-out infinite;
-        }
-      `}</style>
 
       {/* Stats Section with Beautiful Icons */}
       <section className="py-16 bg-white relative">
@@ -171,52 +134,28 @@ const Home = () => {
               Layanan Desa
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Berbagai layanan administrasi dan kemasyarakatan untuk memudahkan
-              warga desa
+              Berbagai layanan administrasi dan kemasyarakatan untuk memudahkan warga desa
             </p>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {services.map((service, index) => (
-              <Card
-                key={index}
-                className="relative overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover-scale bg-white/80 backdrop-blur-sm"
-              >
+              <Card key={index} className="relative overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group hover-scale bg-white/80 backdrop-blur-sm">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative aspect-video overflow-hidden">
-                  <img
-                    src={service.image}
+                  <img 
+                    src={service.image} 
                     alt={service.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                  <div className="absolute top-2 right-2">
-                    <span className="bg-yellow-500 text-green-900 text-xs font-bold px-2 py-1 rounded-full shadow">
-                      {service.badge}
-                    </span>
-                  </div>
-                  <div className="absolute bottom-2 left-2 text-2xl p-2 bg-white/20 backdrop-blur-sm rounded-lg">
-                    {service.icon}
-                  </div>
+                  <div className="absolute bottom-2 left-2 text-2xl">{service.icon}</div>
                 </div>
                 <CardHeader className="relative">
-                  <CardTitle className="text-lg group-hover:text-green-600 transition-colors">
-                    {service.title}
-                  </CardTitle>
+                  <CardTitle className="text-lg group-hover:text-green-600 transition-colors">{service.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="relative">
-                  <p className="text-gray-600 text-sm text-center">
-                    {service.description}
-                  </p>
-                  <div className="mt-4 flex justify-center">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                    >
-                      Ajukan Sekarang →
-                    </Button>
-                  </div>
+                  <p className="text-gray-600 text-center">{service.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -237,35 +176,20 @@ const Home = () => {
               </p>
             </div>
             <Link to="/news">
-              <Button variant="outline" className="hover-scale">
-                Lihat Semua
-              </Button>
+              <Button variant="outline" className="hover-scale">Lihat Semua</Button>
             </Link>
           </div>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {latestNews.map((news) => (
-              <Card
-                key={news.id}
-                className="overflow-hidden hover:shadow-xl transition-all duration-300 group hover-scale bg-white"
-              >
+              <Card key={news.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 group hover-scale bg-white">
                 <div className="relative aspect-video overflow-hidden">
-                  <img
-                    src={news.image}
+                  <img 
+                    src={news.image} 
                     alt={news.title}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  <div className="absolute top-4 left-4 flex items-center gap-2">
-                    <img
-                      src={news.avatar}
-                      alt="avatar"
-                      className="w-8 h-8 rounded-full border-2 border-white shadow"
-                    />
-                    <span className="text-xs bg-green-600 px-2 py-1 rounded text-white font-semibold shadow">
-                      {news.category}
-                    </span>
-                  </div>
                   <div className="absolute bottom-4 left-4 text-white">
                     <span className="text-sm bg-green-600 px-2 py-1 rounded">
                       {new Date(news.date).toLocaleDateString('id-ID')}
@@ -273,16 +197,11 @@ const Home = () => {
                   </div>
                 </div>
                 <CardHeader>
-                  <CardTitle className="text-lg line-clamp-2 group-hover:text-green-600 transition-colors">
-                    {news.title}
-                  </CardTitle>
+                  <CardTitle className="text-lg line-clamp-2 group-hover:text-green-600 transition-colors">{news.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-gray-600 line-clamp-3">{news.excerpt}</p>
-                  <Button
-                    variant="link"
-                    className="p-0 mt-2 text-green-600 hover:text-green-700 story-link"
-                  >
+                  <Button variant="link" className="p-0 mt-2 text-green-600 hover:text-green-700 story-link">
                     Baca selengkapnya →
                   </Button>
                 </CardContent>
@@ -295,9 +214,9 @@ const Home = () => {
       {/* Call to Action with Background Image */}
       <section className="relative py-16 overflow-hidden">
         <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-            alt="Village community"
+          <img 
+            src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            alt="Village community" 
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-green-600/90"></div>
@@ -307,14 +226,10 @@ const Home = () => {
             Bergabunglah dengan Komunitas Digital Desa Ampelan
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Daftarkan diri Anda untuk mendapatkan akses ke layanan online dan
-            informasi terbaru dari desa
+            Daftarkan diri Anda untuk mendapatkan akses ke layanan online dan informasi terbaru dari desa
           </p>
           <Link to="/register">
-            <Button
-              size="lg"
-              className="bg-yellow-500 text-green-800 hover:bg-yellow-400 font-semibold hover-scale"
-            >
+            <Button size="lg" className="bg-yellow-500 text-green-800 hover:bg-yellow-400 font-semibold hover-scale">
               Daftar Sekarang
             </Button>
           </Link>

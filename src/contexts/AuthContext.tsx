@@ -114,11 +114,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       return false;
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Login error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Terjadi kesalahan saat login",
+        description: error.message || "Terjadi kesalahan saat login",
         variant: "destructive",
       });
       return false;
@@ -162,11 +162,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       return false;
-    } catch (error: unknown) {
+    } catch (error: any) { // Added type annotation
       console.error('Register error:', error);
       toast({
         title: "Error",
-        description: (error instanceof Error ? error.message : "Terjadi kesalahan saat mendaftar"),
+        description: error.message || "Terjadi kesalahan saat mendaftar", // Improved error message
         variant: "destructive",
       });
       return false;
@@ -225,7 +225,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider as Parameters<typeof supabase.auth.signInWithOAuth>[0]['provider'],
+        provider: provider as any, // Type assertion might be needed based on Supabase types
         options: {
           redirectTo: `${window.location.origin}/`
         }
@@ -245,11 +245,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // The redirect will happen, so no need for a success toast here.
       return true;
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('OAuth Login error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Terjadi kesalahan saat login via OAuth",
+        description: error.message || "Terjadi kesalahan saat login via OAuth",
         variant: "destructive",
       });
       return false;
