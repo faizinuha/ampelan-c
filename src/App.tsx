@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Navigation from "@/components/Navigation";
 import NotificationCenter from "@/components/NotificationCenter";
+import NotificationPermission from "@/components/NotificationPermission";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -27,6 +28,7 @@ const App = () => (
           <div className="min-h-screen bg-gray-50">
             <Navigation />
             <NotificationCenter />
+            <NotificationPermission />
             <main>
               <Routes>
                 <Route path="/" element={<Home />} />

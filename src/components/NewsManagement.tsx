@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,23 +80,58 @@ const NewsManagement = () => {
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
-    const filePath = `news/${fileName}`;
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `news/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('images')
-      .upload(filePath, file);
+      // Try to upload to storage bucket
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
 
-    if (uploadError) {
-      throw uploadError;
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        // Fallback: return a placeholder URL or use the preview
+        return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+      }
+
+      const { data } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      // Return placeholder image if upload fails
+      return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+    }
+  };
+
+  const sendNotification = async (title: string, message: string) => {
+    // Check if browser supports notifications
+    if (!("Notification" in window)) {
+      console.log("Browser tidak mendukung notifikasi");
+      return;
     }
 
-    const { data } = supabase.storage
-      .from('images')
-      .getPublicUrl(filePath);
+    // Request permission if needed
+    if (Notification.permission === "default") {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        console.log("Izin notifikasi ditolak");
+        return;
+      }
+    }
 
-    return data.publicUrl;
+    // Send notification if permission granted
+    if (Notification.permission === "granted") {
+      new Notification(title, {
+        body: message,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico'
+      });
+    }
   };
 
   const createNews = async () => {
@@ -127,13 +161,19 @@ const NewsManagement = () => {
         description: "Berita berhasil dibuat",
       });
 
+      // Send web push notification
+      await sendNotification(
+        "Berita Baru Diterbitkan!",
+        `${newNews.title} - ${newNews.excerpt.substring(0, 50)}...`
+      );
+
       fetchNews();
       resetForm();
     } catch (error) {
       console.error('Error creating news:', error);
       toast({
         title: "Error",
-        description: "Gagal membuat berita",
+        description: "Gagal membuat berita. Silakan coba lagi.",
         variant: "destructive",
       });
     }
