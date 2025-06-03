@@ -14,7 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Bell, FileText, BarChart3, Plus, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, Notification } from '@/types/auth';
+import { DocumentSubmission } from '@/types/submissions';
 import { useToast } from '@/hooks/use-toast';
+import SubmissionsList from '@/components/SubmissionsList';
 
 const Admin = () => {
   const { user, isLoading } = useAuth();
@@ -22,7 +24,8 @@ const Admin = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeNotifications: 0,
-    totalDocuments: 0
+    totalSubmissions: 0,
+    pendingSubmissions: 0
   });
   const [users, setUsers] = useState<Profile[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -59,10 +62,20 @@ const Admin = () => {
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true);
 
+      const { count: submissionCount } = await supabase
+        .from('document_submissions')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: pendingCount } = await supabase
+        .from('document_submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
       setStats({
         totalUsers: userCount || 0,
         activeNotifications: notificationCount || 0,
-        totalDocuments: 0
+        totalSubmissions: submissionCount || 0,
+        pendingSubmissions: pendingCount || 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -198,7 +211,7 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
-      {/* Hero Banner with Village Image */}
+      {/* Hero Banner */}
       <div className="relative h-64 bg-gradient-to-r from-green-600 to-green-800 overflow-hidden">
         <div className="absolute inset-0 bg-black/30"></div>
         <img 
@@ -208,7 +221,7 @@ const Admin = () => {
         />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <div className="text-white">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in">Panel Admin Desa Ampelan</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Panel Admin Desa Ampelan</h1>
             <p className="text-xl md:text-2xl opacity-90">Kelola sistem informasi desa dengan mudah</p>
           </div>
         </div>
@@ -229,15 +242,15 @@ const Admin = () => {
               <Bell className="w-4 h-4 mr-2" />
               Notifikasi
             </TabsTrigger>
-            <TabsTrigger value="documents" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
+            <TabsTrigger value="submissions" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <FileText className="w-4 h-4 mr-2" />
-              Dokumen
+              Pengajuan
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-xl transition-all duration-300 hover-scale">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Pengguna</CardTitle>
                   <Users className="h-4 w-4" />
@@ -248,7 +261,7 @@ const Admin = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white hover:shadow-xl transition-all duration-300 hover-scale">
+              <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Notifikasi Aktif</CardTitle>
                   <Bell className="h-4 w-4" />
@@ -259,14 +272,25 @@ const Admin = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-xl transition-all duration-300 hover-scale">
+              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Dokumen</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Pengajuan</CardTitle>
                   <FileText className="h-4 w-4" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{stats.totalDocuments}</div>
-                  <p className="text-purple-100 text-sm">Dokumen tersimpan</p>
+                  <div className="text-3xl font-bold">{stats.totalSubmissions}</div>
+                  <p className="text-purple-100 text-sm">Dokumen diajukan</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-orange-500 to-red-500 text-white hover:shadow-xl transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+                  <FileText className="h-4 w-4" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{stats.pendingSubmissions}</div>
+                  <p className="text-orange-100 text-sm">Menunggu persetujuan</p>
                 </CardContent>
               </Card>
             </div>
@@ -360,9 +384,6 @@ const Admin = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-2xl font-bold text-gray-800">Kelola Notifikasi</CardTitle>
-                  <Button onClick={() => {}} className="bg-green-600 hover:bg-green-700">
-                    <Plus className="w-4 h-4 mr-2" /> Buat Notifikasi
-                  </Button>
                 </div>
               </CardHeader>
               <CardContent>
@@ -434,12 +455,7 @@ const Admin = () => {
                         <TableRow key={notification.id} className="hover:bg-green-50/50">
                           <TableCell className="font-medium">{notification.title}</TableCell>
                           <TableCell>
-                            <Badge variant={
-                              notification.type === 'success' ? 'default' :
-                              notification.type === 'warning' ? 'secondary' :
-                              notification.type === 'error' ? 'destructive' :
-                              'secondary'
-                            }>
+                            <Badge variant="secondary">
                               {notification.type}
                             </Badge>
                           </TableCell>
@@ -474,19 +490,8 @@ const Admin = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="documents" className="mt-6">
-            <Card className="bg-white/80 backdrop-blur-sm shadow-xl">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-gray-800">Kelola Dokumen</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <FileText className="w-24 h-24 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">Fitur Segera Hadir</h3>
-                  <p className="text-gray-500">Sistem manajemen dokumen sedang dalam pengembangan.</p>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="submissions" className="mt-6">
+            <SubmissionsList isAdmin={true} />
           </TabsContent>
         </Tabs>
       </div>

@@ -1,247 +1,301 @@
 
 import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Menu, X, LogOut, Settings, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
-import NotificationCenter from './NotificationCenter';
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator 
+} from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { 
+  Home, 
+  User, 
+  Settings, 
+  LogOut, 
+  Menu, 
+  FileText,
+  Bell,
+  Users,
+  BookOpen
+} from 'lucide-react';
+import DocumentSubmissionForm from './DocumentSubmissionForm';
 
 const Navigation = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/');
-    setIsMenuOpen(false);
   };
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
+  const isActive = (path: string) => location.pathname === path;
+
+  const navItems = [
+    { path: '/', label: 'Beranda', icon: Home },
+    { path: '/news', label: 'Berita', icon: BookOpen },
+    ...(user?.role === 'admin' ? [{ path: '/admin', label: 'Admin', icon: Settings }] : []),
+  ];
+
+  const NavLink = ({ to, children, className = "", mobile = false }: { 
+    to: string; 
+    children: React.ReactNode; 
+    className?: string;
+    mobile?: boolean;
+  }) => (
+    <Link
+      to={to}
+      className={`${className} ${
+        isActive(to)
+          ? mobile
+            ? 'bg-green-100 text-green-700 font-semibold'
+            : 'text-green-600 border-b-2 border-green-600'
+          : mobile
+            ? 'text-gray-700 hover:bg-gray-100'
+            : 'text-gray-700 hover:text-green-600'
+      } transition-colors duration-200`}
+      onClick={() => setIsOpen(false)}
+    >
+      {children}
+    </Link>
+  );
+
   return (
-    <nav className="bg-green-800 text-white shadow-lg sticky top-0 z-50">
+    <nav className="bg-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-              <span className="text-green-800 font-bold text-sm">A</span>
+          <Link to="/" className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">DA</span>
             </div>
-            <span className="text-xl font-bold">Desa Ampelan</span>
+            <div className="hidden sm:block">
+              <h1 className="text-xl font-bold text-gray-900">Desa Ampelan</h1>
+              <p className="text-xs text-gray-600">Portal Digital</p>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="hover:text-yellow-300 transition-colors">Beranda</Link>
-            <Link to="/" className="hover:text-yellow-300 transition-colors">Tentang</Link>
-            <Link to="/" className="hover:text-yellow-300 transition-colors">Layanan</Link>
-            <Link to="/" className="hover:text-yellow-300 transition-colors">Berita</Link>
-            <Link to="/" className="hover:text-yellow-300 transition-colors">Kontak</Link>
+            {navItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className="flex items-center space-x-1 px-3 py-2 text-sm font-medium"
+              >
+                <item.icon className="w-4 h-4" />
+                <span>{item.label}</span>
+              </NavLink>
+            ))}
           </div>
 
-          {/* User Actions */}
+          {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <div className="flex items-center space-x-4">
-                <NotificationCenter />
+              <>
+                <DocumentSubmissionForm 
+                  trigger={
+                    <Button variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50">
+                      <FileText className="w-4 h-4 mr-2" />
+                      Ajukan Dokumen
+                    </Button>
+                  }
+                />
                 
-                <div className="flex items-center space-x-2">
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={profile?.avatar_url} alt={user.name} />
-                    <AvatarFallback className="bg-yellow-500 text-green-800 text-xs">
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm">{profile.full_name}</span>
-                </div>
-
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => navigate('/profile')}
-                  className="text-white hover:text-yellow-300"
-                >
-                  <User className="w-4 h-4 mr-1" />
-                  Profil
-                </Button>
-
-                {user.role === 'admin' && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => navigate('/admin')}
-                    className="text-white hover:text-yellow-300"
-                  >
-                    <Settings className="w-4 h-4 mr-1" />
-                    Admin
-                  </Button>
-                )}
-
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  className="text-white hover:text-yellow-300"
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={profile?.avatar_url || ""} />
+                        <AvatarFallback className="bg-green-600 text-white">
+                          {profile?.full_name ? getInitials(profile.full_name) : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium">{profile?.full_name || 'Pengguna'}</p>
+                        <p className="w-[200px] truncate text-sm text-muted-foreground">
+                          {user.email}
+                        </p>
+                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="w-fit">
+                          {user.role === 'admin' ? 'Admin' : 'Warga'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        Profil
+                      </Link>
+                    </DropdownMenuItem>
+                    {user.role === 'admin' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Panel Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Keluar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => navigate('/login')}
-                  className="text-white hover:text-yellow-300"
-                >
-                  Masuk
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={() => navigate('/register')}
-                  className="bg-yellow-500 text-green-800 hover:bg-yellow-400"
-                >
-                  Daftar
-                </Button>
+                <Link to="/login">
+                  <Button variant="ghost" size="sm">
+                    Masuk
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    Daftar
+                  </Button>
+                </Link>
               </div>
             )}
           </div>
 
-          {/* Mobile menu button */}
+          {/* Mobile Menu */}
           <div className="md:hidden flex items-center space-x-2">
-            {user && <NotificationCenter />}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-white"
-            >
-              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-green-700 rounded-lg mt-2 p-4">
-            <div className="flex flex-col space-y-4">
-              <Link 
-                to="/" 
-                className="hover:text-yellow-300 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Beranda
-              </Link>
-              <Link 
-                to="/about" 
-                className="hover:text-yellow-300 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Tentang
-              </Link>
-              <Link 
-                to="/services" 
-                className="hover:text-yellow-300 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Layanan
-              </Link>
-              <Link 
-                to="/news" 
-                className="hover:text-yellow-300 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Berita
-              </Link>
-              <Link 
-                to="/contact" 
-                className="hover:text-yellow-300 transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Kontak
-              </Link>
-              
-              {user ? (
-                <div className="border-t border-green-600 pt-4 flex flex-col space-y-2">
-                  <div className="flex items-center space-x-2 pb-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarImage src={profile?.avatar_url} alt={user.name} />
-                      <AvatarFallback className="bg-yellow-500 text-green-800 text-xs">
-                        {getInitials(user.name)}
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={profile?.avatar_url || ""} />
+                      <AvatarFallback className="bg-green-600 text-white text-sm">
+                        {profile?.full_name ? getInitials(profile.full_name) : 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <span>{user.name}</span>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium text-sm">{profile?.full_name || 'Pengguna'}</p>
+                        <p className="w-[200px] truncate text-xs text-muted-foreground">
+                          {user.email}
+                        </p>
+                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="w-fit text-xs">
+                          {user.role === 'admin' ? 'Admin' : 'Warga'}
+                        </Badge>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center">
+                        <User className="mr-2 h-4 w-4" />
+                        Profil
+                      </Link>
+                    </DropdownMenuItem>
+                    {user.role === 'admin' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Panel Admin
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Keluar
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+            
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <div className="flex flex-col h-full">
+                  <div className="flex items-center space-x-3 pb-6 border-b">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-bold text-lg">DA</span>
+                    </div>
+                    <div>
+                      <h1 className="text-lg font-bold text-gray-900">Desa Ampelan</h1>
+                      <p className="text-xs text-gray-600">Portal Digital</p>
+                    </div>
                   </div>
                   
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      navigate('/profile');
-                      setIsMenuOpen(false);
-                    }}
-                    className="text-white hover:text-yellow-300 justify-start"
-                  >
-                    <User className="w-4 h-4 mr-2" />
-                    Profil Saya
-                  </Button>
+                  <div className="flex-1 py-6">
+                    <nav className="space-y-2">
+                      {navItems.map((item) => (
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          mobile={true}
+                          className="flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <item.icon className="w-5 h-5" />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      ))}
+                      
+                      {user && (
+                        <div className="pt-4 border-t">
+                          <DocumentSubmissionForm 
+                            trigger={
+                              <Button className="w-full bg-green-600 hover:bg-green-700 justify-start">
+                                <FileText className="w-4 h-4 mr-2" />
+                                Ajukan Dokumen
+                              </Button>
+                            }
+                          />
+                        </div>
+                      )}
+                    </nav>
+                  </div>
                   
-                  {user.role === 'admin' && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => {
-                        navigate('/admin');
-                        setIsMenuOpen(false);
-                      }}
-                      className="text-white hover:text-yellow-300 justify-start"
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Admin Panel
-                    </Button>
+                  {!user && (
+                    <div className="border-t pt-6 space-y-2">
+                      <Link to="/login" onClick={() => setIsOpen(false)}>
+                        <Button variant="outline" className="w-full">
+                          Masuk
+                        </Button>
+                      </Link>
+                      <Link to="/register" onClick={() => setIsOpen(false)}>
+                        <Button className="w-full bg-green-600 hover:bg-green-700">
+                          Daftar
+                        </Button>
+                      </Link>
+                    </div>
                   )}
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleLogout}
-                    className="text-white hover:text-yellow-300 justify-start"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Keluar
-                  </Button>
                 </div>
-              ) : (
-                <div className="border-t border-green-600 pt-4 flex flex-col space-y-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => {
-                      navigate('/login');
-                      setIsMenuOpen(false);
-                    }}
-                    className="text-white hover:text-yellow-300 justify-start"
-                  >
-                    Masuk
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={() => {
-                      navigate('/register');
-                      setIsMenuOpen(false);
-                    }}
-                    className="bg-yellow-500 text-green-800 hover:bg-yellow-400"
-                  >
-                    Daftar
-                  </Button>
-                </div>
-              )}
-            </div>
+              </SheetContent>
+            </Sheet>
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );
