@@ -1,30 +1,27 @@
-
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSeparator 
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { 
-  Home, 
-  User, 
-  Settings, 
-  LogOut, 
-  Menu, 
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  BookOpen,
   FileText,
-  Bell,
-  Users,
-  BookOpen
+  Home,
+  LogOut,
+  Menu,
+  Settings,
+  User,
 } from 'lucide-react';
-import DocumentSubmissionForm from './DocumentSubmissionForm';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import NotificationCenter from './NotificationCenter';
 
 const Navigation = () => {
   const { user, profile, logout } = useAuth();
@@ -40,7 +37,7 @@ const Navigation = () => {
   const getInitials = (name: string) => {
     return name
       .split(' ')
-      .map(word => word.charAt(0))
+      .map((word) => word.charAt(0))
       .join('')
       .toUpperCase()
       .slice(0, 2);
@@ -51,12 +48,19 @@ const Navigation = () => {
   const navItems = [
     { path: '/', label: 'Beranda', icon: Home },
     { path: '/news', label: 'Berita', icon: BookOpen },
-    ...(user?.role === 'admin' ? [{ path: '/admin', label: 'Admin', icon: Settings }] : []),
+    ...(user?.role === 'admin'
+      ? [{ path: '/admin', label: 'Admin', icon: Settings }]
+      : []),
   ];
 
-  const NavLink = ({ to, children, className = "", mobile = false }: { 
-    to: string; 
-    children: React.ReactNode; 
+  const NavLink = ({
+    to,
+    children,
+    className = '',
+    mobile = false,
+  }: {
+    to: string;
+    children: React.ReactNode;
     className?: string;
     mobile?: boolean;
   }) => (
@@ -68,8 +72,8 @@ const Navigation = () => {
             ? 'bg-green-100 text-green-700 font-semibold'
             : 'text-green-600 border-b-2 border-green-600'
           : mobile
-            ? 'text-gray-700 hover:bg-gray-100'
-            : 'text-gray-700 hover:text-green-600'
+          ? 'text-gray-700 hover:bg-gray-100'
+          : 'text-gray-700 hover:text-green-600'
       } transition-colors duration-200`}
       onClick={() => setIsOpen(false)}
     >
@@ -110,22 +114,20 @@ const Navigation = () => {
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
-                <DocumentSubmissionForm 
-                  trigger={
-                    <Button variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50">
-                      <FileText className="w-4 h-4 mr-2" />
-                      Ajukan Dokumen
-                    </Button>
-                  }
-                />
-                
+                <NotificationCenter />
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                    <Button
+                      variant="ghost"
+                      className="relative h-10 w-10 rounded-full"
+                    >
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={profile?.avatar_url || ""} />
+                        <AvatarImage src={profile?.avatar_url || ''} />
                         <AvatarFallback className="bg-green-600 text-white">
-                          {profile?.full_name ? getInitials(profile.full_name) : 'U'}
+                          {profile?.full_name
+                            ? getInitials(profile.full_name)
+                            : 'U'}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -133,11 +135,18 @@ const Navigation = () => {
                   <DropdownMenuContent className="w-56" align="end">
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium">{profile?.full_name || 'Pengguna'}</p>
+                        <p className="font-medium">
+                          {profile?.full_name || 'Pengguna'}
+                        </p>
                         <p className="w-[200px] truncate text-sm text-muted-foreground">
                           {user.email}
                         </p>
-                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="w-fit">
+                        <Badge
+                          variant={
+                            user.role === 'admin' ? 'default' : 'secondary'
+                          }
+                          className="w-fit"
+                        >
                           {user.role === 'admin' ? 'Admin' : 'Warga'}
                         </Badge>
                       </div>
@@ -158,7 +167,10 @@ const Navigation = () => {
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      className="text-red-600"
+                    >
                       <LogOut className="mr-2 h-4 w-4" />
                       Keluar
                     </DropdownMenuItem>
@@ -186,11 +198,16 @@ const Navigation = () => {
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                  <Button
+                    variant="ghost"
+                    className="relative h-9 w-9 rounded-full"
+                  >
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={profile?.avatar_url || ""} />
+                      <AvatarImage src={profile?.avatar_url || ''} />
                       <AvatarFallback className="bg-green-600 text-white text-sm">
-                        {profile?.full_name ? getInitials(profile.full_name) : 'U'}
+                        {profile?.full_name
+                          ? getInitials(profile.full_name)
+                          : 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -198,14 +215,25 @@ const Navigation = () => {
                 <DropdownMenuContent className="w-56" align="end">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium text-sm">{profile?.full_name || 'Pengguna'}</p>
+                      <p className="font-medium text-sm">
+                        {profile?.full_name || 'Pengguna'}
+                      </p>
                       <p className="w-[200px] truncate text-xs text-muted-foreground">
                         {user.email}
                       </p>
-                      <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="w-fit text-xs">
+                      <Badge
+                        variant={
+                          user.role === 'admin' ? 'default' : 'secondary'
+                        }
+                        className="w-fit text-xs"
+                      >
                         {user.role === 'admin' ? 'Admin' : 'Warga'}
                       </Badge>
                     </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <div className="p-2">
+                    <NotificationCenter />
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -223,14 +251,17 @@ const Navigation = () => {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-red-600"
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     Keluar
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            
+
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm">
@@ -244,11 +275,13 @@ const Navigation = () => {
                       <span className="text-white font-bold text-lg">DA</span>
                     </div>
                     <div>
-                      <h1 className="text-lg font-bold text-gray-900">Desa Ampelan</h1>
+                      <h1 className="text-lg font-bold text-gray-900">
+                        Desa Ampelan
+                      </h1>
                       <p className="text-xs text-gray-600">Portal Digital</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex-1 py-6">
                     <nav className="space-y-2">
                       {navItems.map((item) => (
@@ -262,22 +295,20 @@ const Navigation = () => {
                           <span>{item.label}</span>
                         </NavLink>
                       ))}
-                      
                       {user && (
-                        <div className="pt-4 border-t">
-                          <DocumentSubmissionForm 
-                            trigger={
-                              <Button className="w-full bg-green-600 hover:bg-green-700 justify-start">
-                                <FileText className="w-4 h-4 mr-2" />
-                                Ajukan Dokumen
-                              </Button>
-                            }
-                          />
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-4 text-green-600 border-green-600 hover:bg-green-50"
+                          onClick={() => setIsOpen(false)}
+                        >
+                          <FileText className="w-4 h-4 mr-2" />
+                          Ajukan Dokumen
+                        </Button>
                       )}
                     </nav>
                   </div>
-                  
+
                   {!user && (
                     <div className="border-t pt-6 space-y-2">
                       <Link to="/login" onClick={() => setIsOpen(false)}>

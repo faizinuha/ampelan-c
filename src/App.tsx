@@ -17,7 +17,7 @@ import Profile from "@/pages/Profile";
 import Admin from "@/pages/Admin";
 import News from "@/pages/News";
 import NotFound from "@/pages/NotFound";
-
+// import MainLayout from "./layouts/MainLayouts";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -29,17 +29,20 @@ const App = () => (
         <AuthProvider>
           <div className="min-h-screen bg-gray-50 flex flex-col">
             <Navigation />
-            <NotificationCenter />
+            {/* <NotificationCenter /> */}
             <NotificationPermission />
             <CustomerService />
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/news" element={<News />} />
+                {/* Halamann Login dan register */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+
+                {/* Halaman utama */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
