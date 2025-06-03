@@ -92,7 +92,7 @@ const Navigation = () => {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-gray-900">Desa Ampelan</h1>
-              <p className="text-xs text-gray-600">Portal Digital</p>
+              {/* <p className="text-xs text-gray-600">Portal Digital</p> */}
             </div>
           </Link>
 
