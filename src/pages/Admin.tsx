@@ -11,12 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Bell, FileText, BarChart3, Plus, Edit, Trash2 } from 'lucide-react';
+import { Users, Bell, FileText, BarChart3, Plus, Edit, Trash2, BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, Notification } from '@/types/auth';
 import { DocumentSubmission } from '@/types/submissions';
 import { useToast } from '@/hooks/use-toast';
 import SubmissionsList from '@/components/SubmissionsList';
+import NewsManagement from '@/components/NewsManagement';
 
 const Admin = () => {
   const { user, isLoading } = useAuth();
@@ -25,7 +26,8 @@ const Admin = () => {
     totalUsers: 0,
     activeNotifications: 0,
     totalSubmissions: 0,
-    pendingSubmissions: 0
+    pendingSubmissions: 0,
+    totalNews: 0
   });
   const [users, setUsers] = useState<Profile[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -71,11 +73,16 @@ const Admin = () => {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
 
+      const { count: newsCount } = await supabase
+        .from('news_posts')
+        .select('*', { count: 'exact', head: true });
+
       setStats({
         totalUsers: userCount || 0,
         activeNotifications: notificationCount || 0,
         totalSubmissions: submissionCount || 0,
-        pendingSubmissions: pendingCount || 0
+        pendingSubmissions: pendingCount || 0,
+        totalNews: newsCount || 0
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -229,7 +236,7 @@ const Admin = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm shadow-lg">
+          <TabsList className="grid w-full grid-cols-5 bg-white/80 backdrop-blur-sm shadow-lg">
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <BarChart3 className="w-4 h-4 mr-2" />
               Dashboard
@@ -246,10 +253,14 @@ const Admin = () => {
               <FileText className="w-4 h-4 mr-2" />
               Pengajuan
             </TabsTrigger>
+            <TabsTrigger value="news" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Berita
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
               <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Pengguna</CardTitle>
@@ -291,6 +302,17 @@ const Admin = () => {
                 <CardContent>
                   <div className="text-3xl font-bold">{stats.pendingSubmissions}</div>
                   <p className="text-orange-100 text-sm">Menunggu persetujuan</p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white hover:shadow-xl transition-all duration-300">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Berita</CardTitle>
+                  <BookOpen className="h-4 w-4" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold">{stats.totalNews}</div>
+                  <p className="text-indigo-100 text-sm">Artikel dipublikasi</p>
                 </CardContent>
               </Card>
             </div>
@@ -492,6 +514,10 @@ const Admin = () => {
 
           <TabsContent value="submissions" className="mt-6">
             <SubmissionsList isAdmin={true} />
+          </TabsContent>
+
+          <TabsContent value="news" className="mt-6">
+            <NewsManagement />
           </TabsContent>
         </Tabs>
       </div>
