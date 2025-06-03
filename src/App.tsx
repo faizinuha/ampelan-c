@@ -8,6 +8,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Navigation from "@/components/Navigation";
 import NotificationCenter from "@/components/NotificationCenter";
 import NotificationPermission from "@/components/NotificationPermission";
+import CustomerService from "@/components/CustomerService";
+import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
@@ -25,11 +27,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen bg-gray-50 flex flex-col">
             <Navigation />
             <NotificationCenter />
             <NotificationPermission />
-            <main>
+            <CustomerService />
+            <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
@@ -40,6 +43,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
+            <Footer />
           </div>
         </AuthProvider>
       </BrowserRouter>
