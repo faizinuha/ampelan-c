@@ -4,10 +4,10 @@ export interface DocumentSubmission {
   user_id: string;
   document_type: string;
   purpose: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_notes?: string;
-  created_at: string;
-  updated_at: string;
+  status: string | null;
+  admin_notes?: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface NewsPost {
