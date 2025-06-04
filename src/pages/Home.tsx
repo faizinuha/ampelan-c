@@ -4,11 +4,43 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, Calendar, MapPin, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DocumentSubmissionForm from '@/components/DocumentSubmissionForm';
-import { useNews } from '@/hooks/useNews';
 
 const Home = () => {
-  const { getLatestNews, loading } = useNews();
-  const latestNews = getLatestNews(3);
+  const latestNews = [
+    {
+      id: 1,
+      title: 'Musyawarah Desa Tentang Pembangunan Jalan',
+      date: '2025-06-15',
+      excerpt:
+        'Akan dilaksanakan musyawarah desa untuk membahas rencana pembangunan jalan di RT 03/RW 02.',
+      image:
+        'https://images.unsplash.com/photo-1503676382389-4809596d5290?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      category: 'Musyawarah',
+      avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+    },
+    {
+      id: 2,
+      title: 'Program Bantuan Sembako',
+      date: '2025-06-10',
+      excerpt:
+        'Distribusi bantuan sembako untuk keluarga kurang mampu akan dimulai minggu depan.',
+      image:
+        'https://images.unsplash.com/photo-1606788075761-9c3e1c7c7b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      category: 'Bantuan',
+      avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+    },
+    {
+      id: 3,
+      title: 'Gotong Royong Pembersihan Sungai',
+      date: '2025-06-08',
+      excerpt:
+        'Kegiatan gotong royong pembersihan sungai diikuti oleh 150 warga desa dengan antusias.',
+      image:
+        'https://images.unsplash.com/photo-1464983953574-0892a716854b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      category: 'Gotong Royong',
+      avatar: 'https://randomuser.me/api/portraits/men/65.jpg',
+    },
+  ];
 
   const services = [
     {
@@ -211,67 +243,52 @@ const Home = () => {
             </Link>
           </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="overflow-hidden">
-                  <div className="aspect-video bg-gray-200 animate-pulse"></div>
-                  <CardHeader>
-                    <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {latestNews.map((news) => (
-                <Card
-                  key={news.id}
-                  className="overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white"
-                >
-                  <div className="relative aspect-video overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {latestNews.map((news) => (
+              <Card
+                key={news.id}
+                className="overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white"
+              >
+                <div className="relative aspect-video overflow-hidden">
+                  <img
+                    src={news.image}
+                    alt={news.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  <div className="absolute top-4 left-4 flex items-center gap-2">
                     <img
-                      src={news.image_url || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
-                      alt={news.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      src={news.avatar}
+                      alt="avatar"
+                      className="w-8 h-8 rounded-full border-2 border-white shadow"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    <div className="absolute top-4 left-4 flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white text-sm font-bold">
-                        {news.author_name.charAt(0)}
-                      </div>
-                      <span className="text-xs bg-green-600 px-2 py-1 rounded text-white font-semibold shadow">
-                        Berita
-                      </span>
-                    </div>
-                    <div className="absolute bottom-4 left-4 text-white">
-                      <span className="text-sm bg-green-600 px-2 py-1 rounded">
-                        {new Date(news.created_at).toLocaleDateString('id-ID')}
-                      </span>
-                    </div>
+                    <span className="text-xs bg-green-600 px-2 py-1 rounded text-white font-semibold shadow">
+                      {news.category}
+                    </span>
                   </div>
-                  <CardHeader>
-                    <CardTitle className="text-lg line-clamp-2 group-hover:text-green-600 transition-colors">
-                      {news.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600 line-clamp-3">{news.excerpt}</p>
-                    <Button
-                      variant="link"
-                      className="p-0 mt-2 text-green-600 hover:text-green-700"
-                    >
-                      Baca selengkapnya →
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                  <div className="absolute bottom-4 left-4 text-white">
+                    <span className="text-sm bg-green-600 px-2 py-1 rounded">
+                      {new Date(news.date).toLocaleDateString('id-ID')}
+                    </span>
+                  </div>
+                </div>
+                <CardHeader>
+                  <CardTitle className="text-lg line-clamp-2 group-hover:text-green-600 transition-colors">
+                    {news.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 line-clamp-3">{news.excerpt}</p>
+                  <Button
+                    variant="link"
+                    className="p-0 mt-2 text-green-600 hover:text-green-700"
+                  >
+                    Baca selengkapnya →
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 

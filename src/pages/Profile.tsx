@@ -11,10 +11,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { User, Edit, FileText, Bell, Camera, Upload, BookOpen } from 'lucide-react';
+import { User, Edit, FileText, Bell, Camera } from 'lucide-react';
 import SubmissionsList from '@/components/SubmissionsList';
 import DocumentSubmissionForm from '@/components/DocumentSubmissionForm';
-import NewsManagement from '@/components/NewsManagement';
 
 const Profile = () => {
   const { user, profile, updateProfile, isLoading } = useAuth();
@@ -75,21 +74,6 @@ const Profile = () => {
     }
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Simulate image upload
-      const reader = new FileReader();
-      reader.onload = () => {
-        toast({
-          title: "Berhasil!",
-          description: "Foto profil berhasil diupload",
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -112,14 +96,14 @@ const Profile = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <div className="text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Profil Saya</h1>
-            <p className="text-xl md:text-2xl opacity-90">Kelola informasi dan konten Anda</p>
+            <p className="text-xl md:text-2xl opacity-90">Kelola informasi dan pengajuan dokumen Anda</p>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
         <Tabs defaultValue="profile" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm shadow-lg mb-6">
+          <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm shadow-lg mb-6">
             <TabsTrigger value="profile" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <User className="w-4 h-4 mr-2" />
               Profil
@@ -127,10 +111,6 @@ const Profile = () => {
             <TabsTrigger value="submissions" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <FileText className="w-4 h-4 mr-2" />
               Pengajuan
-            </TabsTrigger>
-            <TabsTrigger value="news" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Kelola Berita
             </TabsTrigger>
             <TabsTrigger value="notifications" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <Bell className="w-4 h-4 mr-2" />
@@ -150,18 +130,12 @@ const Profile = () => {
                         {profile?.full_name ? getInitials(profile.full_name) : 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <label htmlFor="profile-upload" className="absolute bottom-0 right-1/4 cursor-pointer">
-                      <div className="bg-green-600 hover:bg-green-700 rounded-full w-10 h-10 flex items-center justify-center shadow-lg transition-colors">
-                        <Camera className="w-4 h-4 text-white" />
-                      </div>
-                      <input
-                        id="profile-upload"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageUpload}
-                      />
-                    </label>
+                    <Button
+                      size="sm"
+                      className="absolute bottom-0 right-1/4 rounded-full w-10 h-10 p-0 bg-green-600 hover:bg-green-700"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </Button>
                   </div>
                   <CardTitle className="text-2xl">{profile?.full_name || 'Pengguna'}</CardTitle>
                   <Badge variant={user.role === 'admin' ? 'default' : 'secondary'} className="mt-2">
@@ -288,10 +262,6 @@ const Profile = () => {
 
           <TabsContent value="submissions">
             <SubmissionsList isAdmin={false} />
-          </TabsContent>
-
-          <TabsContent value="news">
-            <NewsManagement />
           </TabsContent>
 
           <TabsContent value="notifications">

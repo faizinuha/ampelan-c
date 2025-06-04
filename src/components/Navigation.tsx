@@ -47,11 +47,13 @@ const Navigation = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Removed admin from main navigation as it's in dropdown
   const navItems = [
     { path: '/', label: 'Beranda', icon: Home },
     { path: '/news', label: 'Berita', icon: BookOpen },
     { path: '/activities', label: 'Kegiatan', icon: Calendar },
+    ...(user?.role === 'admin'
+      ? [{ path: '/admin', label: 'Admin', icon: Settings }]
+      : []),
   ];
 
   const NavLink = ({

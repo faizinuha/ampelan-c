@@ -3,13 +3,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Users, Bell, FileText, BarChart3, Calendar } from 'lucide-react';
+import { Users, Bell, FileText, BarChart3, BookOpen, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
 import { useToast } from '@/hooks/use-toast';
 import SubmissionsList from '@/components/SubmissionsList';
+import NewsManagement from '@/components/NewsManagement';
 import NotificationManagement from '@/components/NotificationManagement';
 
 const Admin = () => {
@@ -21,7 +20,7 @@ const Admin = () => {
     totalSubmissions: 0,
     pendingSubmissions: 0,
     totalNews: 0,
-    totalActivities: 4 // Set to sample data count as fallback
+    totalActivities: 0
   });
   const [users, setUsers] = useState<Profile[]>([]);
 
@@ -64,19 +63,9 @@ const Admin = () => {
         .from('news_posts')
         .select('*', { count: 'exact', head: true });
 
-      // Get activities count using direct table query
-      let activitiesCount = 4; // Sample data count
-      try {
-        const { count: dbActivitiesCount } = await supabase
-          .from('activities')
-          .select('*', { count: 'exact', head: true });
-        
-        if (dbActivitiesCount !== null) {
-          activitiesCount += dbActivitiesCount;
-        }
-      } catch (error) {
-        console.log('Activities table not ready yet, using sample count');
-      }
+      const { count: activitiesCount } = await supabase
+        .from('activities')
+        .select('*', { count: 'exact', head: true });
 
       setStats({
         totalUsers: userCount || 0,
@@ -84,7 +73,7 @@ const Admin = () => {
         totalSubmissions: submissionCount || 0,
         pendingSubmissions: pendingCount || 0,
         totalNews: newsCount || 0,
-        totalActivities: activitiesCount
+        totalActivities: activitiesCount || 3 // Include sample data
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -136,7 +125,7 @@ const Admin = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 bg-white/80 backdrop-blur-sm shadow-lg">
+          <TabsList className="grid w-full grid-cols-6 bg-white/80 backdrop-blur-sm shadow-lg">
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <BarChart3 className="w-4 h-4 mr-2" />
               Dashboard
@@ -152,6 +141,10 @@ const Admin = () => {
             <TabsTrigger value="submissions" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <FileText className="w-4 h-4 mr-2" />
               Pengajuan
+            </TabsTrigger>
+            <TabsTrigger value="news" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Berita
             </TabsTrigger>
             <TabsTrigger value="activities" className="data-[state=active]:bg-green-600 data-[state=active]:text-white">
               <Calendar className="w-4 h-4 mr-2" />
@@ -208,7 +201,7 @@ const Admin = () => {
               <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Berita</CardTitle>
-                  <FileText className="h-4 w-4" />
+                  <BookOpen className="h-4 w-4" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{stats.totalNews}</div>
@@ -318,6 +311,10 @@ const Admin = () => {
 
           <TabsContent value="submissions" className="mt-6">
             <SubmissionsList isAdmin={true} />
+          </TabsContent>
+
+          <TabsContent value="news" className="mt-6">
+            <NewsManagement />
           </TabsContent>
 
           <TabsContent value="activities" className="mt-6">
