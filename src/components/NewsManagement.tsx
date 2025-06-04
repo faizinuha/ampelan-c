@@ -73,10 +73,7 @@ const NewsManagement = () => {
       setImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setImagePreview(result);
-        // Set image_url to the preview for immediate display
-        setNewNews({ ...newNews, image_url: result });
+        setImagePreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -88,14 +85,22 @@ const NewsManagement = () => {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `news/${fileName}`;
 
-      // Convert file to base64 for storage in database
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          resolve(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-      });
+      // Try to upload to storage bucket
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        // Fallback: return a placeholder URL or use the preview
+        return 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+      }
+
+      const { data } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
     } catch (error) {
       console.error('Error uploading image:', error);
       // Return placeholder image if upload fails
@@ -178,7 +183,7 @@ const NewsManagement = () => {
     if (!editingNews) return;
     
     try {
-      let imageUrl = newNews.image_url;
+      let imageUrl = editingNews.image_url;
       
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);

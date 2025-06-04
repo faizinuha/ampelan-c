@@ -81,7 +81,6 @@ export type Database = {
           excerpt: string
           id: string
           image_url: string | null
-          img_mar: string | null
           is_published: boolean | null
           title: string
           updated_at: string | null
@@ -94,7 +93,6 @@ export type Database = {
           excerpt: string
           id?: string
           image_url?: string | null
-          img_mar?: string | null
           is_published?: boolean | null
           title: string
           updated_at?: string | null
@@ -107,7 +105,6 @@ export type Database = {
           excerpt?: string
           id?: string
           image_url?: string | null
-          img_mar?: string | null
           is_published?: boolean | null
           title?: string
           updated_at?: string | null
