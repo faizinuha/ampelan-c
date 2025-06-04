@@ -9,10 +9,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, Bell, Settings } from 'lucide-react';
 
+interface NotificationPreferences {
+  email_news: boolean;
+  email_activities: boolean;
+  email_announcements: boolean;
+  push_notifications: boolean;
+}
+
 const EmailNotificationSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<NotificationPreferences>({
     email_news: true,
     email_activities: true,
     email_announcements: true,
@@ -27,12 +34,20 @@ const EmailNotificationSettings = () => {
   }, [user]);
 
   const fetchNotificationSettings = async () => {
+    if (!user) return;
+    
     try {
-      const { data, error } = await supabase
+      console.log('Fetching notification settings for user:', user.id);
+      
+      // Use type assertion to handle the table name that might not be in the generated types yet
+      const { data, error } = await (supabase as any)
         .from('user_notification_preferences')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .single();
+
+      console.log('Fetched data:', data);
+      console.log('Error:', error);
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching notification settings:', error);
@@ -46,18 +61,22 @@ const EmailNotificationSettings = () => {
           email_announcements: data.email_announcements ?? true,
           push_notifications: data.push_notifications ?? false,
         });
+        console.log('Settings updated:', data);
       }
     } catch (error) {
       console.error('Error fetching notification settings:', error);
     }
   };
 
-  const updateNotificationSettings = async (newSettings: typeof settings) => {
+  const updateNotificationSettings = async (newSettings: NotificationPreferences) => {
     if (!user) return;
 
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      console.log('Updating notification settings:', newSettings);
+      
+      // Use type assertion to handle the table name that might not be in the generated types yet
+      const { error } = await (supabase as any)
         .from('user_notification_preferences')
         .upsert({
           user_id: user.id,
@@ -65,9 +84,14 @@ const EmailNotificationSettings = () => {
           updated_at: new Date().toISOString()
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating settings:', error);
+        throw error;
+      }
 
       setSettings(newSettings);
+      console.log('Settings saved successfully');
+      
       toast({
         title: "Berhasil!",
         description: "Pengaturan notifikasi telah disimpan",
@@ -84,7 +108,7 @@ const EmailNotificationSettings = () => {
     }
   };
 
-  const handleSettingChange = (key: keyof typeof settings, value: boolean) => {
+  const handleSettingChange = (key: keyof NotificationPreferences, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
     updateNotificationSettings(newSettings);
   };
@@ -94,6 +118,8 @@ const EmailNotificationSettings = () => {
 
     setIsLoading(true);
     try {
+      console.log('Sending test notification');
+      
       const { error } = await supabase.from('notifications').insert({
         title: 'Test Notifikasi Email',
         message: 'Ini adalah test notifikasi email untuk memastikan sistem berfungsi dengan baik.',
@@ -103,7 +129,12 @@ const EmailNotificationSettings = () => {
         is_active: true
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting notification:', error);
+        throw error;
+      }
+
+      console.log('Test notification sent successfully');
 
       toast({
         title: "Test Notifikasi Dikirim!",
