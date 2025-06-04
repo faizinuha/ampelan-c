@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -66,15 +65,15 @@ const Admin = () => {
         .from('news_posts')
         .select('*', { count: 'exact', head: true });
 
-      // Try to get activities count, fallback to sample data count
+      // Try to get activities count using the function, fallback to sample data count
       let activitiesCount = 4; // Sample data count
       try {
         const { data: activitiesData } = await supabase.rpc('get_activities');
-        if (activitiesData) {
+        if (activitiesData && Array.isArray(activitiesData)) {
           activitiesCount += activitiesData.length;
         }
       } catch (error) {
-        console.log('Activities table not ready yet, using sample count');
+        console.log('Activities function not ready yet, using sample count');
       }
 
       setStats({
