@@ -60,29 +60,15 @@ export const useActivities = () => {
 
   const fetchActivities = async () => {
     try {
-      // Try to fetch from database using direct table query instead of function
-      const { data, error } = await supabase
-        .from('activities')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Try to fetch from database using the function with proper typing
+      const { data, error } = await supabase.rpc('get_activities' as any);
       
       if (error) {
-        console.log('Using sample data as fallback:', error);
+        console.log('Using sample data as fallback');
         setActivities(sampleActivities);
       } else {
-        // Map database data to Activity interface
-        const dbActivities: Activity[] = (data || []).map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
-          date: item.date,
-          location: item.location,
-          image_url: item.image_url,
-          uploaded_by: item.uploaded_by,
-          uploader_name: item.uploader_name,
-          created_at: item.created_at
-        }));
-        
+        // Combine data from database with sample data, ensuring proper typing
+        const dbActivities = Array.isArray(data) ? data as Activity[] : [];
         const allActivities = [...dbActivities, ...sampleActivities];
         setActivities(allActivities);
       }
@@ -103,18 +89,16 @@ export const useActivities = () => {
     }
 
     try {
-      // Use direct table insert instead of function
-      const { error } = await supabase
-        .from('activities')
-        .insert({
-          title: newActivity.title,
-          description: newActivity.description,
-          date: newActivity.date,
-          location: newActivity.location,
-          image_url: newActivity.image_url,
-          uploaded_by: user.id,
-          uploader_name: profile?.full_name || user.email || 'Unknown'
-        });
+      // Use the insert_activity function with proper typing
+      const { error } = await supabase.rpc('insert_activity' as any, {
+        p_title: newActivity.title,
+        p_description: newActivity.description,
+        p_date: newActivity.date,
+        p_location: newActivity.location,
+        p_image_url: newActivity.image_url,
+        p_uploaded_by: user.id,
+        p_uploader_name: profile?.full_name || user.email || 'Unknown'
+      });
 
       if (error) {
         console.error('Error uploading activity:', error);
