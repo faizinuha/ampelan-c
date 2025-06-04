@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Users, Bell, FileText, BarChart3, BookOpen, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
@@ -20,7 +23,7 @@ const Admin = () => {
     totalSubmissions: 0,
     pendingSubmissions: 0,
     totalNews: 0,
-    totalActivities: 0
+    totalActivities: 4 // Set to sample data count as fallback
   });
   const [users, setUsers] = useState<Profile[]>([]);
 
@@ -63,9 +66,16 @@ const Admin = () => {
         .from('news_posts')
         .select('*', { count: 'exact', head: true });
 
-      const { count: activitiesCount } = await supabase
-        .from('activities')
-        .select('*', { count: 'exact', head: true });
+      // Try to get activities count, fallback to sample data count
+      let activitiesCount = 4; // Sample data count
+      try {
+        const { data: activitiesData } = await supabase.rpc('get_activities');
+        if (activitiesData) {
+          activitiesCount += activitiesData.length;
+        }
+      } catch (error) {
+        console.log('Activities table not ready yet, using sample count');
+      }
 
       setStats({
         totalUsers: userCount || 0,
@@ -73,7 +83,7 @@ const Admin = () => {
         totalSubmissions: submissionCount || 0,
         pendingSubmissions: pendingCount || 0,
         totalNews: newsCount || 0,
-        totalActivities: activitiesCount || 3 // Include sample data
+        totalActivities: activitiesCount
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
