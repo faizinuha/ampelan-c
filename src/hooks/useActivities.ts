@@ -60,15 +60,16 @@ export const useActivities = () => {
 
   const fetchActivities = async () => {
     try {
-      // Try to fetch from database using the function
-      const { data, error } = await supabase.rpc('get_activities');
+      // Try to fetch from database using the function with proper typing
+      const { data, error } = await supabase.rpc('get_activities' as any);
       
       if (error) {
         console.log('Using sample data as fallback');
         setActivities(sampleActivities);
       } else {
-        // Combine data from database with sample data
-        const allActivities = [...(data || []), ...sampleActivities];
+        // Combine data from database with sample data, ensuring proper typing
+        const dbActivities = Array.isArray(data) ? data as Activity[] : [];
+        const allActivities = [...dbActivities, ...sampleActivities];
         setActivities(allActivities);
       }
     } catch (error) {
@@ -88,8 +89,8 @@ export const useActivities = () => {
     }
 
     try {
-      // Use the insert_activity function
-      const { error } = await supabase.rpc('insert_activity', {
+      // Use the insert_activity function with proper typing
+      const { error } = await supabase.rpc('insert_activity' as any, {
         p_title: newActivity.title,
         p_description: newActivity.description,
         p_date: newActivity.date,

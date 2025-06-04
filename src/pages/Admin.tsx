@@ -68,9 +68,9 @@ const Admin = () => {
       // Try to get activities count using the function, fallback to sample data count
       let activitiesCount = 4; // Sample data count
       try {
-        const { data: activitiesData, error } = await supabase.rpc('get_activities');
+        const { data: activitiesData, error } = await supabase.rpc('get_activities' as any);
         if (!error && activitiesData && Array.isArray(activitiesData)) {
-          activitiesCount += activitiesData.length;
+          activitiesCount += (activitiesData as any[]).length;
         }
       } catch (error) {
         console.log('Activities function not ready yet, using sample count');
