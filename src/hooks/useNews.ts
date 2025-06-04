@@ -76,8 +76,20 @@ export const useNews = () => {
         console.log('Database error, using sample data:', error);
         setNews(sampleNews);
       } else {
-        // Combine real data with sample data
-        const dbNews = data || [];
+        // Map database data to NewsPost interface
+        const dbNews: NewsPost[] = (data || []).map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          excerpt: item.excerpt,
+          image_url: item.image_url,
+          author: item.author_id || 'admin',
+          author_name: 'Admin Desa', // Default author name since it's not in database
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          is_published: item.is_published
+        }));
+        
         const allNews = [...dbNews, ...sampleNews];
         setNews(allNews);
       }
