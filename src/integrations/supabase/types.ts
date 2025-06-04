@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activities: {
+        Row: {
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          image_url: string | null
+          location: string | null
+          title: string
+          updated_at: string
+          uploaded_by: string
+          uploader_name: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          title: string
+          updated_at?: string
+          uploaded_by: string
+          uploader_name: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          title?: string
+          updated_at?: string
+          uploaded_by?: string
+          uploader_name?: string
+        }
+        Relationships: []
+      }
       document_submissions: {
         Row: {
           admin_notes: string | null
@@ -81,6 +120,7 @@ export type Database = {
           excerpt: string
           id: string
           image_url: string | null
+          img_mar: string | null
           is_published: boolean | null
           title: string
           updated_at: string | null
@@ -93,6 +133,7 @@ export type Database = {
           excerpt: string
           id?: string
           image_url?: string | null
+          img_mar?: string | null
           is_published?: boolean | null
           title: string
           updated_at?: string | null
@@ -105,6 +146,7 @@ export type Database = {
           excerpt?: string
           id?: string
           image_url?: string | null
+          img_mar?: string | null
           is_published?: boolean | null
           title?: string
           updated_at?: string | null
@@ -183,6 +225,39 @@ export type Database = {
           role?: string
           rt_rw?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_notification_preferences: {
+        Row: {
+          created_at: string
+          email_activities: boolean
+          email_announcements: boolean
+          email_news: boolean
+          id: string
+          push_notifications: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email_activities?: boolean
+          email_announcements?: boolean
+          email_news?: boolean
+          id?: string
+          push_notifications?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email_activities?: boolean
+          email_announcements?: boolean
+          email_news?: boolean
+          id?: string
+          push_notifications?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
