@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Profile, AuthContextType } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,7 +31,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) throw error;
       
-      // Type cast the data to ensure it matches our Profile interface
       const profileData: Profile = {
         ...data,
         role: data.role as 'admin' | 'user'
@@ -40,7 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setProfile(profileData);
       
-      // Update user state with profile data
       if (profileData) {
         setUser({
           id: profileData.id,
@@ -98,9 +95,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        let errorMessage = error.message;
+        
+        // Handle specific error cases
+        if (error.message.includes('Invalid login credentials')) {
+          errorMessage = 'Email atau password salah. Silakan coba lagi.';
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = 'Email belum dikonfirmasi. Silakan cek email Anda untuk link konfirmasi.';
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Terlalu banyak percobaan login. Silakan tunggu beberapa menit.';
+        }
+        
         toast({
-          title: "Error",
-          description: error.message,
+          title: "Error Login",
+          description: errorMessage,
           variant: "destructive",
         });
         return false;
@@ -130,6 +138,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      
+      // Get current origin for email redirect
+      const redirectTo = `${window.location.origin}/`;
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -137,28 +149,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             full_name: name,
           },
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: redirectTo
         }
       });
 
       if (error) {
+        let errorMessage = error.message;
+        
+        // Handle specific error cases
+        if (error.message.includes('User already registered')) {
+          errorMessage = 'Email sudah terdaftar. Silakan gunakan email lain atau login.';
+        } else if (error.message.includes('Password should be')) {
+          errorMessage = 'Password terlalu lemah. Gunakan kombinasi huruf, angka, dan simbol.';
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = 'Format email tidak valid.';
+        }
+        
         toast({
-          title: "Error",
-          description: error.message,
+          title: "Error Registrasi",
+          description: errorMessage,
           variant: "destructive",
         });
         return false;
       }
 
       if (data.user) {
-        toast({
-          title: "Berhasil!",
-          description: "Akun berhasil dibuat. Silakan cek email untuk verifikasi.",
-        });
-        // Automatically fetch profile after successful registration
-        setTimeout(() => {
-          if (data.user) fetchProfile(data.user.id);
-        }, 0);
+        // Check if email confirmation is required
+        if (!data.session) {
+          toast({
+            title: "Registrasi Berhasil!",
+            description: "Silakan cek email Anda untuk link konfirmasi sebelum dapat login.",
+            duration: 7000,
+          });
+        } else {
+          toast({
+            title: "Berhasil!",
+            description: "Akun berhasil dibuat dan Anda telah masuk.",
+          });
+        }
+        
+        // Send welcome notification
+        if (data.user.id) {
+          try {
+            await supabase.from('notifications').insert({
+              title: 'Selamat Datang!',
+              message: `Halo ${name}, selamat datang di platform digital Desa Ampelan. Terima kasih telah bergabung dengan kami.`,
+              type: 'success',
+              target_audience: 'user',
+              created_by: null,
+              is_active: true
+            });
+          } catch (notifError) {
+            console.log('Failed to send welcome notification:', notifError);
+          }
+        }
+        
         return true;
       }
       return false;
@@ -166,7 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Register error:', error);
       toast({
         title: "Error",
-        description: (error instanceof Error ? error.message : "Terjadi kesalahan saat mendaftar"),
+        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mendaftar",
         variant: "destructive",
       });
       return false;
@@ -267,7 +312,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       register, 
       logout, 
       updateProfile,
-      oauthLogin, // Added oauthLogin
+      oauthLogin,
       isLoading 
     }}>
       {children}
