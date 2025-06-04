@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import {
   Menu,
   Settings,
   User,
+  Calendar,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -48,6 +50,7 @@ const Navigation = () => {
   const navItems = [
     { path: '/', label: 'Beranda', icon: Home },
     { path: '/news', label: 'Berita', icon: BookOpen },
+    { path: '/activities', label: 'Kegiatan', icon: Calendar },
     ...(user?.role === 'admin'
       ? [{ path: '/admin', label: 'Admin', icon: Settings }]
       : []),
@@ -92,7 +95,6 @@ const Navigation = () => {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-gray-900">Desa Ampelan</h1>
-              {/* <p className="text-xs text-gray-600">Portal Digital</p> */}
             </div>
           </Link>
 
