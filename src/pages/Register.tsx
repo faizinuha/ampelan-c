@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,9 +16,16 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
-  const { register, isLoading } = useAuth();
+  const { register, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -26,16 +34,41 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+  const validateForm = () => {
+    if (!formData.name.trim()) {
       toast({
         title: "Error",
-        description: "Harap isi semua field yang diperlukan",
+        description: "Nama lengkap wajib diisi",
         variant: "destructive",
       });
-      return;
+      return false;
+    }
+
+    if (!formData.email.trim()) {
+      toast({
+        title: "Error",
+        description: "Email wajib diisi",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.password) {
+      toast({
+        title: "Error",
+        description: "Password wajib diisi",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Konfirmasi password wajib diisi",
+        variant: "destructive",
+      });
+      return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -44,7 +77,7 @@ const Register = () => {
         description: "Password dan konfirmasi password tidak sama",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (formData.password.length < 6) {
@@ -53,22 +86,37 @@ const Register = () => {
         description: "Password minimal 6 karakter",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Error",
+        description: "Format email tidak valid",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
 
     const success = await register(formData.email, formData.password, formData.name);
     
     if (success) {
-      toast({
-        title: "Berhasil!",
-        description: "Akun berhasil dibuat dan Anda telah masuk",
-      });
-      navigate('/');
-    } else {
-      toast({
-        title: "Registrasi Gagal",
-        description: "Terjadi kesalahan saat membuat akun",
-        variant: "destructive",
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
       });
     }
   };

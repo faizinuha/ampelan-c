@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Profile, AuthContextType } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,7 +30,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
       
       const profileData: Profile = {
         ...data,
@@ -38,10 +42,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setProfile(profileData);
       
-      if (profileData) {
+      if (profileData && session?.user) {
         setUser({
           id: profileData.id,
-          email: session?.user?.email || '',
+          email: session.user.email || '',
           name: profileData.full_name,
           role: profileData.role,
           avatar: profileData.avatar_url || undefined
@@ -79,8 +83,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTimeout(() => {
           fetchProfile(session.user.id);
         }, 0);
+      } else {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -89,44 +94,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.toLowerCase().trim(),
         password,
       });
 
       if (error) {
-        let errorMessage = error.message;
+        console.error('Login error:', error);
         
-        // Handle specific error cases
+        let errorMessage = 'Terjadi kesalahan saat login';
+        
         if (error.message.includes('Invalid login credentials')) {
           errorMessage = 'Email atau password salah. Silakan coba lagi.';
         } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Email belum dikonfirmasi. Silakan cek email Anda untuk link konfirmasi.';
+          errorMessage = 'Email belum dikonfirmasi. Silakan cek email Anda.';
         } else if (error.message.includes('Too many requests')) {
-          errorMessage = 'Terlalu banyak percobaan login. Silakan tunggu beberapa menit.';
+          errorMessage = 'Terlalu banyak percobaan. Silakan tunggu beberapa menit.';
         }
         
         toast({
-          title: "Error Login",
+          title: "Login Gagal",
           description: errorMessage,
           variant: "destructive",
         });
         return false;
       }
 
-      if (data.user) {
-        toast({
-          title: "Berhasil!",
-          description: "Login berhasil",
-        });
+      if (data.user && data.session) {
         return true;
       }
+      
       return false;
     } catch (error: unknown) {
       console.error('Login error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Terjadi kesalahan saat login",
+        description: "Terjadi kesalahan yang tidak terduga",
         variant: "destructive",
       });
       return false;
@@ -143,30 +147,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const redirectTo = `${window.location.origin}/`;
       
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.toLowerCase().trim(),
         password,
         options: {
           data: {
-            full_name: name,
+            full_name: name.trim(),
           },
           emailRedirectTo: redirectTo
         }
       });
 
       if (error) {
-        let errorMessage = error.message;
+        console.error('Register error:', error);
         
-        // Handle specific error cases
+        let errorMessage = 'Terjadi kesalahan saat mendaftar';
+        
         if (error.message.includes('User already registered')) {
           errorMessage = 'Email sudah terdaftar. Silakan gunakan email lain atau login.';
         } else if (error.message.includes('Password should be')) {
-          errorMessage = 'Password terlalu lemah. Gunakan kombinasi huruf, angka, dan simbol.';
+          errorMessage = 'Password terlalu lemah. Minimal 6 karakter.';
         } else if (error.message.includes('Invalid email')) {
           errorMessage = 'Format email tidak valid.';
+        } else if (error.message.includes('Signup is disabled')) {
+          errorMessage = 'Pendaftaran sedang dinonaktifkan. Silakan coba lagi nanti.';
         }
         
         toast({
-          title: "Error Registrasi",
+          title: "Registrasi Gagal",
           description: errorMessage,
           variant: "destructive",
         });
@@ -188,22 +195,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         }
         
-        // Send welcome notification
-        if (data.user.id) {
-          try {
-            await supabase.from('notifications').insert({
-              title: 'Selamat Datang!',
-              message: `Halo ${name}, selamat datang di platform digital Desa Ampelan. Terima kasih telah bergabung dengan kami.`,
-              type: 'success',
-              target_audience: 'user',
-              created_by: null,
-              is_active: true
-            });
-          } catch (notifError) {
-            console.log('Failed to send welcome notification:', notifError);
-          }
-        }
-        
         return true;
       }
       return false;
@@ -211,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Register error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Terjadi kesalahan saat mendaftar",
+        description: "Terjadi kesalahan yang tidak terduga saat mendaftar",
         variant: "destructive",
       });
       return false;
@@ -222,6 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
       setUser(null);
       setProfile(null);
@@ -232,6 +224,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch (error) {
       console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat logout",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -239,6 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return false;
     
     try {
+      setIsLoading(true);
       const { error } = await supabase
         .from('profiles')
         .update(data)
@@ -262,10 +262,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
       return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Add oauthLogin implementation
   const oauthLogin = async (provider: string): Promise<boolean> => {
     try {
       setIsLoading(true);
@@ -277,6 +278,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        console.error('OAuth error:', error);
         toast({
           title: "Error",
           description: error.message,
@@ -285,22 +287,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
-      // OAuth sign-in typically handles session/user via the redirect and auth state change listener
-      // No explicit user/profile setting needed here, it's handled by the effect hook.
-      
-      // The redirect will happen, so no need for a success toast here.
       return true;
     } catch (error: unknown) {
       console.error('OAuth Login error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Terjadi kesalahan saat login via OAuth",
+        description: "Terjadi kesalahan saat login via OAuth",
         variant: "destructive",
       });
       return false;
     } finally {
-      // isLoading will be set to false by the auth state change listener
-      // setIsLoading(false);
+      // Don't set loading false here as auth state change will handle it
     }
   };
 

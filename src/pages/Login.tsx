@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,17 +13,24 @@ import { FaGoogle, FaFacebook } from 'react-icons/fa';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, oauthLogin, isLoading } = useAuth();
+  const { login, oauthLogin, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       toast({
         title: "Error",
-        description: "Harap isi semua field yang diperlukan",
+        description: "Harap isi email dan password",
         variant: "destructive",
       });
       return;
@@ -36,51 +44,37 @@ const Login = () => {
         description: "Anda berhasil masuk ke akun",
       });
       navigate('/');
-    } else {
-      toast({
-        title: "Login Gagal",
-        description: "Email atau password tidak valid",
-        variant: "destructive",
-      });
     }
   };
 
   const handleOAuthLogin = async (provider: 'google' | 'facebook') => {
-  try {
-    if (provider === 'facebook') {
-      alert('Coming soon.. ' + provider + ' belum tersedia');
-      return;
-    }
-    const success = await oauthLogin(provider);
-    
-    if (success) {
-      window.alert(`Sedang Memproses.. ${provider}. `);
-      // toast({
-      //   title: "Loading..",
-      //   description: `Sedang memproses login dengan ${provider}.`,
-      //   duration: 100000,
-      // })
+    try {
+      if (provider === 'facebook') {
+        toast({
+          title: "Info",
+          description: "Login Facebook belum tersedia. Gunakan Google atau email.",
+          variant: "default",
+        });
+        return;
+      }
+      
+      const success = await oauthLogin(provider);
+      
+      if (success) {
+        toast({
+          title: "Memproses...",
+          description: `Sedang memproses login dengan ${provider}`,
+        });
+      }
+    } catch (error) {
+      console.error('OAuth error:', error);
       toast({
-        title: "Berhasil!",
-        description: `Anda berhasil masuk menggunakan ${provider}`,
-      });
-      navigate('/');
-    } else {
-      toast({
-        title: "Login Gagal",
-        description: `Gagal masuk menggunakan ${provider}`,
+        title: "Error",
+        description: `Gagal login menggunakan ${provider}`,
         variant: "destructive",
       });
     }
-  } catch (error) {
-    toast({
-      title: "Error",
-      description: `Terjadi kesalahan saat login menggunakan ${provider}`,
-      variant: "destructive",
-    });
-  }
-};
-
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -148,6 +142,7 @@ const Login = () => {
               <Button
                 onClick={() => handleOAuthLogin('google')}
                 className="bg-red-600 hover:bg-red-700 flex items-center justify-center space-x-2"
+                disabled={isLoading}
                 aria-label="Login dengan Google"
               >
                 <FaGoogle className="w-5 h-5" />
@@ -157,37 +152,12 @@ const Login = () => {
               <Button
                 onClick={() => handleOAuthLogin('facebook')}
                 className="bg-blue-700 hover:bg-blue-800 flex items-center justify-center space-x-2"
+                disabled={isLoading}
                 aria-label="Login dengan Facebook"
               >
                 <FaFacebook className="w-5 h-5" />
                 <span>Facebook</span>
               </Button>
-            </div>
-
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">Demo Accounts</span>
-                </div>
-              </div>
-
-              {/* <div className="mt-4 space-y-2">
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm font-medium text-blue-800">Admin:</p>
-                  <p className="text-xs text-blue-600">
-                    Email: admin@ampelan.com | Password: admin123
-                  </p>
-                </div>
-                <div className="bg-green-50 p-3 rounded-lg">
-                  <p className="text-sm font-medium text-green-800">User:</p>
-                  <p className="text-xs text-green-600">
-                    Email: [email apapun] | Password: user123
-                  </p>
-                </div>
-              </div> */}
             </div>
 
             <div className="mt-6 text-center">
