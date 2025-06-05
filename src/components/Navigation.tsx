@@ -20,6 +20,7 @@ import {
   Settings,
   User,
   Calendar,
+  MessageCircle,
 } from 'lucide-react';
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -47,11 +48,12 @@ const Navigation = () => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Removed admin from main navigation as it's in dropdown
+  // Navigation items with customer service added
   const navItems = [
     { path: '/', label: 'Beranda', icon: Home },
     { path: '/news', label: 'Berita', icon: BookOpen },
     { path: '/activities', label: 'Kegiatan', icon: Calendar },
+    { path: '/customer-service', label: 'Customer Service', icon: MessageCircle },
   ];
 
   const NavLink = ({

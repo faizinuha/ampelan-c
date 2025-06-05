@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Mail, Lock, User } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Loader2 } from 'lucide-react';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +16,7 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -23,7 +24,8 @@ const Register = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      console.log('User already logged in, redirecting to home');
+      navigate('/', { replace: true });
     }
   }, [user, navigate]);
 
@@ -108,18 +110,35 @@ const Register = () => {
     
     if (!validateForm()) return;
 
-    const success = await register(formData.email, formData.password, formData.name);
-    
-    if (success) {
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-      });
+    setIsSubmitting(true);
+
+    try {
+      const success = await register(formData.email, formData.password, formData.name);
+      
+      if (success) {
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: ''
+        });
+        
+        // Show additional instructions
+        toast({
+          title: "Registrasi Berhasil!",
+          description: "Jika perlu konfirmasi email, cek kotak masuk Anda. Setelah konfirmasi, login otomatis akan dilakukan.",
+          duration: 8000,
+        });
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const isDisabled = isLoading || isSubmitting;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -155,6 +174,7 @@ const Register = () => {
                   onChange={handleChange}
                   placeholder="Masukkan nama lengkap Anda"
                   className="mt-1"
+                  disabled={isDisabled}
                   required
                 />
               </div>
@@ -172,6 +192,7 @@ const Register = () => {
                   onChange={handleChange}
                   placeholder="Masukkan email Anda"
                   className="mt-1"
+                  disabled={isDisabled}
                   required
                 />
               </div>
@@ -189,6 +210,7 @@ const Register = () => {
                   onChange={handleChange}
                   placeholder="Masukkan password (min. 6 karakter)"
                   className="mt-1"
+                  disabled={isDisabled}
                   required
                 />
               </div>
@@ -206,16 +228,24 @@ const Register = () => {
                   onChange={handleChange}
                   placeholder="Ulangi password Anda"
                   className="mt-1"
+                  disabled={isDisabled}
                   required
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={isLoading}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                disabled={isDisabled}
               >
-                {isLoading ? 'Memproses...' : 'Daftar Sekarang'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  'Daftar Sekarang'
+                )}
               </Button>
             </form>
 

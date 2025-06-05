@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { LogIn, Mail, Lock } from 'lucide-react';
+import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
 import { FaGoogle, FaFacebook } from 'react-icons/fa';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, oauthLogin, isLoading, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -20,7 +21,8 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      console.log('User already logged in, redirecting to home');
+      navigate('/', { replace: true });
     }
   }, [user, navigate]);
 
@@ -36,14 +38,19 @@ const Login = () => {
       return;
     }
 
-    const success = await login(email, password);
+    setIsSubmitting(true);
     
-    if (success) {
-      toast({
-        title: "Berhasil!",
-        description: "Anda berhasil masuk ke akun",
-      });
-      navigate('/');
+    try {
+      const success = await login(email, password);
+      
+      if (success) {
+        // Navigation will be handled by useEffect after user state changes
+        console.log('Login successful, waiting for redirect');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -63,7 +70,7 @@ const Login = () => {
       if (success) {
         toast({
           title: "Memproses...",
-          description: `Sedang memproses login dengan ${provider}`,
+          description: `Mengarahkan ke ${provider} untuk login`,
         });
       }
     } catch (error) {
@@ -75,6 +82,8 @@ const Login = () => {
       });
     }
   };
+
+  const isDisabled = isLoading || isSubmitting;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -109,6 +118,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Masukkan email Anda"
                   className="mt-1"
+                  disabled={isDisabled}
                   required
                 />
               </div>
@@ -125,39 +135,58 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Masukkan password Anda"
                   className="mt-1"
+                  disabled={isDisabled}
                   required
                 />
               </div>
 
               <Button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={isLoading}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                disabled={isDisabled}
               >
-                {isLoading ? 'Memproses...' : 'Masuk'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  'Masuk'
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 flex justify-center space-x-4">
-              <Button
-                onClick={() => handleOAuthLogin('google')}
-                className="bg-red-600 hover:bg-red-700 flex items-center justify-center space-x-2"
-                disabled={isLoading}
-                aria-label="Login dengan Google"
-              >
-                <FaGoogle className="w-5 h-5" />
-                <span>Google</span>
-              </Button>
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Atau masuk dengan</span>
+                </div>
+              </div>
 
-              <Button
-                onClick={() => handleOAuthLogin('facebook')}
-                className="bg-blue-700 hover:bg-blue-800 flex items-center justify-center space-x-2"
-                disabled={isLoading}
-                aria-label="Login dengan Facebook"
-              >
-                <FaFacebook className="w-5 h-5" />
-                <span>Facebook</span>
-              </Button>
+              <div className="mt-6 flex justify-center space-x-4">
+                <Button
+                  onClick={() => handleOAuthLogin('google')}
+                  className="bg-red-600 hover:bg-red-700 flex items-center justify-center space-x-2 disabled:opacity-50"
+                  disabled={isDisabled}
+                  aria-label="Login dengan Google"
+                >
+                  <FaGoogle className="w-5 h-5" />
+                  <span>Google</span>
+                </Button>
+
+                <Button
+                  onClick={() => handleOAuthLogin('facebook')}
+                  className="bg-blue-700 hover:bg-blue-800 flex items-center justify-center space-x-2 disabled:opacity-50"
+                  disabled={isDisabled}
+                  aria-label="Login dengan Facebook"
+                >
+                  <FaFacebook className="w-5 h-5" />
+                  <span>Facebook</span>
+                </Button>
+              </div>
             </div>
 
             <div className="mt-6 text-center">
