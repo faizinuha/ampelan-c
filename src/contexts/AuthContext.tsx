@@ -64,6 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         
         if (session?.user) {
+          // Show welcome message for successful auth
+          if (event === 'SIGNED_IN') {
+            toast({
+              title: "Selamat Datang!",
+              description: "Anda berhasil masuk ke akun",
+            });
+          }
+          
           // Defer profile fetching to avoid blocking
           setTimeout(() => {
             fetchProfile(session.user.id);
@@ -71,6 +79,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(null);
           setProfile(null);
+          
+          // Show message for sign out
+          if (event === 'SIGNED_OUT') {
+            toast({
+              title: "Sampai Jumpa!",
+              description: "Anda telah keluar dari akun",
+            });
+          }
         }
         setIsLoading(false);
       }
@@ -108,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error.message.includes('Invalid login credentials')) {
           errorMessage = 'Email atau password salah. Silakan coba lagi.';
         } else if (error.message.includes('Email not confirmed')) {
-          errorMessage = 'Email belum dikonfirmasi. Silakan cek email Anda.';
+          errorMessage = 'Email belum dikonfirmasi. Silakan cek email Anda untuk link konfirmasi.';
         } else if (error.message.includes('Too many requests')) {
           errorMessage = 'Terlalu banyak percobaan. Silakan tunggu beberapa menit.';
         }
@@ -185,8 +201,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!data.session) {
           toast({
             title: "Registrasi Berhasil!",
-            description: "Silakan cek email Anda untuk link konfirmasi sebelum dapat login.",
-            duration: 7000,
+            description: "Silakan cek email Anda untuk link konfirmasi. Setelah dikonfirmasi, Anda akan otomatis masuk ke sistem.",
+            duration: 10000,
           });
         } else {
           toast({
@@ -218,10 +234,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setProfile(null);
       setSession(null);
-      toast({
-        title: "Berhasil",
-        description: "Logout berhasil",
-      });
     } catch (error) {
       console.error('Logout error:', error);
       toast({
