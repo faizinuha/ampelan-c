@@ -15,6 +15,7 @@ import Activities from "./pages/Activities";
 import NotFound from "./pages/NotFound";
 import MainLayout from "./layouts/MainLayouts";
 import NotificationPermission from "./components/NotificationPermission";
+import CustomerService from "./components/CustomerService";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
               <Route path="activities" element={<Activities />} />
               <Route path="profile" element={<Profile />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="customer-service" element={<CustomerService />} />
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
