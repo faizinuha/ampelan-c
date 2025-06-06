@@ -1,4 +1,3 @@
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import NotificationCenter from './NotificationCenter';
 
 const Navigation = () => {
-  const { user, profile, logout } = useAuth();
+  const { user, profile, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -36,7 +35,10 @@ const Navigation = () => {
     logout();
     navigate('/');
   };
-
+  // if (!user && !isLoading) {
+  //   return <div className="text-center py-10">Memuat...</div>; // loader lucu boleh juga 😁
+  // }
+    
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -53,7 +55,11 @@ const Navigation = () => {
     { path: '/', label: 'Beranda', icon: Home },
     { path: '/news', label: 'Berita', icon: BookOpen },
     { path: '/activities', label: 'Kegiatan', icon: Calendar },
-    { path: '/customer-service', label: 'Customer Service', icon: MessageCircle },
+    {
+      path: '/customer-service',
+      label: 'Customer Service',
+      icon: MessageCircle,
+    },
   ];
 
   const NavLink = ({
@@ -234,9 +240,9 @@ const Navigation = () => {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  <div className="p-2">
+                  {/* <div className="p-2">
                     <NotificationCenter />
-                  </div>
+                  </div> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center">

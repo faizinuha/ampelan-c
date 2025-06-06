@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import type { AuthContextType, Profile, User } from '@/types/auth';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { User, Profile, AuthContextType } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -17,7 +17,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Check current session
     const getSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session?.user) {
           await loadUserProfile(session.user.id);
         }
@@ -31,7 +33,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getSession();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         await loadUserProfile(session.user.id);
       } else {
@@ -51,7 +55,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .select('*')
         .eq('id', userId)
         .single();
-
+// mySingle() ensures we get a single profile or null if not found
+      // Use .single() to ensure we get a single profile or null if not found
       if (error) {
         console.error('Error loading profile:', error);
         return;
@@ -59,9 +64,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (profileData) {
         // Ensure role is properly typed
-        const userRole = (profileData.role === 'admin' || profileData.role === 'user') 
-          ? profileData.role as 'admin' | 'user'
-          : 'user' as const;
+        const userRole =
+          profileData.role === 'admin' || profileData.role === 'user'
+            ? (profileData.role as 'admin' | 'user')
+            : ('user' as const);
 
         // Type-safe conversion from database response to Profile type
         const typedProfile: Profile = {
@@ -74,7 +80,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           role: userRole,
           avatar_url: profileData.avatar_url,
           created_at: profileData.created_at,
-          updated_at: profileData.updated_at
+          updated_at: profileData.updated_at,
         };
 
         setProfile(typedProfile);
@@ -83,7 +89,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           email: '', // We don't store email in profiles table
           name: profileData.full_name,
           role: userRole,
-          avatar: profileData.avatar_url || undefined
+          avatar: profileData.avatar_url || undefined,
         });
       }
     } catch (error) {
@@ -100,9 +106,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         toast({
-          title: "Error",
+          title: 'Error',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return false;
       }
@@ -110,8 +116,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.user) {
         await loadUserProfile(data.user.id);
         toast({
-          title: "Berhasil!",
-          description: "Selamat datang! Anda berhasil masuk ke akun.",
+          title: 'Berhasil!',
+          description: 'Selamat datang! Anda berhasil masuk ke akun.',
         });
         // Redirect to home page after successful login
         navigate('/');
@@ -122,17 +128,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('Login error:', error);
       toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat login",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Terjadi kesalahan saat login',
+        variant: 'destructive',
       });
       return false;
     }
   };
 
-  const register = async (email: string, password: string, name: string): Promise<boolean> => {
+  const register = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      let data, error;
+      // Coba signUp dengan custom data
+      ({ data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -140,49 +152,86 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             full_name: name,
           },
         },
-      });
+      }));
+
+      // Jika error 500, coba ulang tanpa custom data (debug only)
+      if (error && error.status === 500) {
+        console.error(
+          'Supabase 500 error, retrying without custom data:',
+          error
+        );
+        ({ data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        }));
+      }
 
       if (error) {
         toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
+          title: 'Error',
+          description:
+            error.message +
+            (error.status === 500
+              ? ' (Hubungi admin jika masalah berlanjut)'
+              : ''),
+          variant: 'destructive',
         });
         return false;
       }
 
-      if (data.user) {
-        // Create profile after successful registration
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              full_name: name,
-              role: 'user',
-            },
-          ]);
+      // Jika user harus verifikasi email, jangan insert ke profiles dulu
+      if (data.user && !data.user.confirmed_at) {
+        toast({
+          title: 'Registrasi Berhasil!',
+          description:
+            'Akun berhasil dibuat! Silakan cek email Anda untuk verifikasi sebelum bisa login.',
+          duration: 8000,
+        });
+        return true;
+      }
+      // Jika user sudah terverifikasi (misal, email magic link, atau auto-confirm di Supabase)
+
+      if (data.user && data.user.confirmed_at) {
+        const { error: profileError } = await supabase.from('profiles').insert([
+          {
+            id: data.user.id,
+            full_name: name,
+            role: 'user',
+          },
+        ]);
 
         if (profileError) {
           console.error('Error creating profile:', profileError);
+          toast({
+            title: 'Error',
+            description: profileError.message,
+            variant: 'destructive',
+          });
+          return false;
         }
 
         toast({
-          title: "Berhasil!",
-          description: "Akun berhasil dibuat! Silakan cek email Anda untuk verifikasi.",
+          title: 'Registrasi & Verifikasi Berhasil!',
+          description: 'Akun Anda sudah aktif. Silakan login.',
         });
-        // Redirect to home page after successful registration
-        navigate('/');
+        // Redirect ke login page, bukan home
+        navigate('/login');
         return true;
       }
 
+      // Fallback jika tidak ada user
+      toast({
+        title: 'Error',
+        description: 'Registrasi gagal. Silakan coba lagi.',
+        variant: 'destructive',
+      });
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Register error:', error);
       toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat mendaftar",
-        variant: "destructive",
+        title: 'Error',
+        description: error?.message || 'Terjadi kesalahan saat mendaftar',
+        variant: 'destructive',
       });
       return false;
     }
@@ -193,16 +242,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       if (error) {
         toast({
-          title: "Error",
+          title: 'Error',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
       } else {
         setUser(null);
         setProfile(null);
         toast({
-          title: "Berhasil",
-          description: "Anda telah keluar dari akun",
+          title: 'Berhasil',
+          description: 'Anda telah keluar dari akun',
         });
         // Redirect to home page after logout
         navigate('/');
@@ -223,17 +272,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) {
         toast({
-          title: "Error",
+          title: 'Error',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return false;
       }
 
       await loadUserProfile(user.id);
       toast({
-        title: "Berhasil",
-        description: "Profil berhasil diperbarui",
+        title: 'Berhasil',
+        description: 'Profil berhasil diperbarui',
       });
       return true;
     } catch (error) {
@@ -242,17 +291,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const oauthLogin = async (provider: string): Promise<boolean> => {
+  type OAuthProvider = 'google' | 'github' | 'facebook' | 'twitter'; // Add or remove providers as needed
+
+  const oauthLogin = async (provider: OAuthProvider): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider as any,
+        provider,
       });
 
       if (error) {
         toast({
-          title: "Error",
+          title: 'Error',
           description: error.message,
-          variant: "destructive",
+          variant: 'destructive',
         });
         return false;
       }

@@ -1,20 +1,19 @@
-
-import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { UserPlus, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { Loader2, Lock, Mail, User, UserPlus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, isLoading, user } = useAuth();
@@ -32,61 +31,61 @@ const Register = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const validateForm = () => {
     if (!formData.name.trim()) {
       toast({
-        title: "Error",
-        description: "Nama lengkap wajib diisi",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Nama lengkap wajib diisi',
+        variant: 'destructive',
       });
       return false;
     }
 
     if (!formData.email.trim()) {
       toast({
-        title: "Error",
-        description: "Email wajib diisi",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Email wajib diisi',
+        variant: 'destructive',
       });
       return false;
     }
 
     if (!formData.password) {
       toast({
-        title: "Error",
-        description: "Password wajib diisi",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Password wajib diisi',
+        variant: 'destructive',
       });
       return false;
     }
 
     if (!formData.confirmPassword) {
       toast({
-        title: "Error",
-        description: "Konfirmasi password wajib diisi",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Konfirmasi password wajib diisi',
+        variant: 'destructive',
       });
       return false;
     }
 
     if (formData.password !== formData.confirmPassword) {
       toast({
-        title: "Error",
-        description: "Password dan konfirmasi password tidak sama",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Password dan konfirmasi password tidak sama',
+        variant: 'destructive',
       });
       return false;
     }
 
     if (formData.password.length < 6) {
       toast({
-        title: "Error",
-        description: "Password minimal 6 karakter",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Password minimal 6 karakter',
+        variant: 'destructive',
       });
       return false;
     }
@@ -95,9 +94,9 @@ const Register = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast({
-        title: "Error",
-        description: "Format email tidak valid",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Format email tidak valid',
+        variant: 'destructive',
       });
       return false;
     }
@@ -107,29 +106,26 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsSubmitting(true);
 
     try {
-      const success = await register(formData.email, formData.password, formData.name);
-      
+      const success = await register(
+        formData.email,
+        formData.password,
+        formData.name
+      );
+
       if (success) {
-        // Reset form
         setFormData({
           name: '',
           email: '',
           password: '',
-          confirmPassword: ''
+          confirmPassword: '',
         });
-        
-        // Show additional instructions
-        toast({
-          title: "Registrasi Berhasil!",
-          description: "Jika perlu konfirmasi email, cek kotak masuk Anda. Setelah konfirmasi, login otomatis akan dilakukan.",
-          duration: 8000,
-        });
+        // Tidak perlu toast lagi di sini, sudah dihandle di AuthContext
       }
     } catch (error) {
       console.error('Registration error:', error);
@@ -157,7 +153,9 @@ const Register = () => {
 
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="text-center text-lg">Form Registrasi</CardTitle>
+            <CardTitle className="text-center text-lg">
+              Form Registrasi
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -198,7 +196,10 @@ const Register = () => {
               </div>
 
               <div>
-                <Label htmlFor="password" className="flex items-center space-x-2">
+                <Label
+                  htmlFor="password"
+                  className="flex items-center space-x-2"
+                >
                   <Lock className="w-4 h-4" />
                   <span>Password</span>
                 </Label>
@@ -216,7 +217,10 @@ const Register = () => {
               </div>
 
               <div>
-                <Label htmlFor="confirmPassword" className="flex items-center space-x-2">
+                <Label
+                  htmlFor="confirmPassword"
+                  className="flex items-center space-x-2"
+                >
                   <Lock className="w-4 h-4" />
                   <span>Konfirmasi Password</span>
                 </Label>
