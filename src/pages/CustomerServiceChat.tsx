@@ -1,207 +1,293 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Send, MessageCircle, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Send, Bot, User, MessageCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
-  text: string;
-  sender: 'user' | 'bot';
+  type: 'user' | 'bot' | 'system';
+  content: string;
   timestamp: Date;
+  sender?: string;
+}
+
+interface FAQItem {
+  question: string;
+  answer: string;
+  keywords: string[];
 }
 
 const CustomerServiceChat = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Halo! Selamat datang di Customer Service Desa Ampelan. Ada yang bisa saya bantu?',
-      sender: 'bot',
-      timestamp: new Date()
-    }
-  ]);
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const faqData: FAQItem[] = [
+    {
+      question: "Bagaimana cara mengurus surat domisili?",
+      answer: "Untuk mengurus surat domisili, Anda perlu membawa: 1) KTP asli dan fotocopy, 2) KK asli dan fotocopy, 3) Surat pengantar dari RT/RW. Datang ke kantor desa pada jam kerja (08:00-15:00) hari Senin-Jumat.",
+      keywords: ["surat", "domisili", "ktp", "kk", "rt", "rw"]
+    },
+    {
+      question: "Dimana lokasi kantor desa?",
+      answer: "Kantor Desa Ampelan berlokasi di Jl. Raya Desa Ampelan No. 123, buka Senin-Jumat jam 08:00-15:00. Anda bisa menghubungi (0271) 123456 untuk informasi lebih lanjut.",
+      keywords: ["lokasi", "kantor", "desa", "alamat", "jam", "buka", "telepon"]
+    },
+    {
+      question: "Ada tukang listrik yang bisa dipanggil?",
+      answer: "Ya, ada beberapa tukang listrik di desa: 1) Pak Joko (081234567892), 2) Pak Budi (081234567893). Mereka melayani perbaikan listrik rumah 24 jam.",
+      keywords: ["tukang", "listrik", "perbaikan", "joko", "budi", "24 jam"]
+    },
+    {
+      question: "Kapan ada kegiatan posyandu?",
+      answer: "Posyandu rutin dilaksanakan setiap Rabu minggu ke-2 dan ke-4 setiap bulan di Balai Desa, jam 09:00-12:00. Bawa buku KIA untuk balita dan KTP untuk ibu hamil.",
+      keywords: ["posyandu", "rabu", "balai", "desa", "kia", "balita", "ibu", "hamil"]
+    },
+    {
+      question: "Bagaimana cara daftar bantuan sosial?",
+      answer: "Pendaftaran bantuan sosial dibuka setiap 6 bulan sekali. Syarat: 1) KTP Desa Ampelan, 2) KK, 3) Surat keterangan tidak mampu dari RT/RW. Info pendaftaran akan diumumkan di website dan papan pengumuman desa.",
+      keywords: ["bantuan", "sosial", "daftar", "ktp", "kk", "tidak", "mampu", "rt", "rw"]
+    }
+  ];
+
+  useEffect(() => {
+    // Welcome message when component mounts
+    const welcomeMessage: Message = {
+      id: '1',
+      type: 'system',
+      content: `Selamat datang di Customer Service Desa Ampelan! 👋\n\n${user ? `Halo, ${profile?.full_name || user.name}!` : 'Halo!'} Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`,
+      timestamp: new Date()
+    };
+    setMessages([welcomeMessage]);
+  }, [user, profile]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(scrollToBottom, [messages]);
-
-  const getBotResponse = (userMessage: string): string => {
-    const lowerMessage = userMessage.toLowerCase();
+  const findBestAnswer = (userMessage: string): string | null => {
+    const lowercaseMessage = userMessage.toLowerCase();
     
-    if (lowerMessage.includes('surat') || lowerMessage.includes('dokumen')) {
-      return 'Untuk pengurusan surat, Anda bisa menggunakan layanan online kami. Silakan klik tombol "Layanan Online" di beranda atau beri tahu saya jenis surat apa yang Anda butuhkan.';
-    }
+    // Find FAQ with most matching keywords
+    let bestMatch: FAQItem | null = null;
+    let maxScore = 0;
     
-    if (lowerMessage.includes('jam') || lowerMessage.includes('buka')) {
-      return 'Kantor desa buka setiap hari Senin-Jumat pukul 08.00-16.00 WIB. Kami siap melayani Anda!';
-    }
+    faqData.forEach(faq => {
+      let score = 0;
+      faq.keywords.forEach(keyword => {
+        if (lowercaseMessage.includes(keyword.toLowerCase())) {
+          score++;
+        }
+      });
+      
+      if (score > maxScore && score > 0) {
+        maxScore = score;
+        bestMatch = faq;
+      }
+    });
     
-    if (lowerMessage.includes('lokasi') || lowerMessage.includes('alamat')) {
-      return 'Kantor Desa Ampelan berlokasi di Jl. Desa Ampelan No. 123. Anda juga bisa menggunakan layanan online kami untuk kemudahan.';
-    }
-    
-    if (lowerMessage.includes('bantuan') || lowerMessage.includes('sosial')) {
-      return 'Untuk informasi bantuan sosial, silakan hubungi bagian kesejahteraan desa atau datang langsung ke kantor desa dengan membawa KTP dan KK.';
-    }
-    
-    return 'Terima kasih atas pertanyaan Anda. Tim customer service kami akan segera merespons. Untuk layanan yang lebih cepat, silakan gunakan layanan online kami di beranda.';
+    return bestMatch ? bestMatch.answer : null;
   };
 
-  const handleSendMessage = () => {
-    if (inputMessage.trim() === '') return;
+  const getDefaultResponse = (): string => {
+    const responses = [
+      "Terima kasih atas pertanyaan Anda. Untuk informasi lebih detail, silakan hubungi kantor desa di (0271) 123456 atau datang langsung ke Jl. Raya Desa Ampelan No. 123.",
+      "Maaf, saya belum memiliki informasi spesifik untuk pertanyaan tersebut. Tim customer service kami akan segera menghubungi Anda. Atau Anda bisa langsung ke kantor desa untuk bantuan lebih lanjut.",
+      "Pertanyaan Anda sudah saya catat. Untuk jawaban yang lebih akurat, silakan menghubungi petugas desa di jam kerja (08:00-15:00) atau WhatsApp ke 08123456789."
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+  };
+
+  const simulateTyping = () => {
+    setIsTyping(true);
+    setTimeout(() => {
+      setIsTyping(false);
+    }, 1000 + Math.random() * 2000); // Random delay 1-3 seconds
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputMessage,
-      sender: 'user',
-      timestamp: new Date()
+      type: 'user',
+      content: inputMessage.trim(),
+      timestamp: new Date(),
+      sender: profile?.full_name || user?.name || 'Anda'
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
 
-    // Simulate bot response after a short delay
+    // Simulate typing
+    simulateTyping();
+
+    // Get bot response
     setTimeout(() => {
-      const botResponse: Message = {
+      const botAnswer = findBestAnswer(inputMessage) || getDefaultResponse();
+      
+      const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: getBotResponse(inputMessage),
-        sender: 'bot',
-        timestamp: new Date()
+        type: 'bot',
+        content: botAnswer,
+        timestamp: new Date(),
+        sender: 'CS Desa Ampelan'
       };
-      setMessages(prev => [...prev, botResponse]);
-    }, 1000);
+
+      setMessages(prev => [...prev, botMessage]);
+    }, 1000 + Math.random() * 2000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
       handleSendMessage();
     }
   };
 
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString('id-ID', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link to="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Kembali
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="font-semibold text-gray-900">Customer Service</h1>
-                <p className="text-sm text-green-600">Online</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="text-center mb-8">
+          <div className="mx-auto h-16 w-16 bg-green-600 rounded-full flex items-center justify-center mb-4">
+            <MessageCircle className="h-8 w-8 text-white" />
           </div>
+          <h1 className="text-3xl font-bold text-gray-900">Customer Service</h1>
+          <p className="text-gray-600">Chat dengan asisten virtual Desa Ampelan</p>
         </div>
-      </div>
 
-      {/* Chat Container */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <Card className="h-[500px] flex flex-col">
-          <CardHeader className="border-b">
-            <CardTitle className="text-center text-green-600">Chat dengan Customer Service</CardTitle>
+        <Card className="h-[600px] flex flex-col">
+          <CardHeader className="bg-green-600 text-white rounded-t-lg">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Bot className="w-5 h-5" />
+                <span>CS Desa Ampelan</span>
+              </div>
+              <Badge variant="secondary" className="bg-green-500 text-white">
+                Online
+              </Badge>
+            </CardTitle>
           </CardHeader>
-          
-          {/* Messages */}
-          <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
+
+          <CardContent className="flex-1 flex flex-col p-0">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((message) => (
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                    message.sender === 'user'
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
+                  key={message.id}
+                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <p className="text-sm">{message.text}</p>
-                  <p className="text-xs opacity-70 mt-1">
-                    {message.timestamp.toLocaleTimeString('id-ID', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </p>
+                  <div
+                    className={`flex items-start space-x-2 max-w-[80%] ${
+                      message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+                    }`}
+                  >
+                    <Avatar className="w-8 h-8">
+                      {message.type === 'user' ? (
+                        <>
+                          <AvatarImage src={profile?.avatar_url || ''} />
+                          <AvatarFallback className="bg-blue-600 text-white text-xs">
+                            <User className="w-4 h-4" />
+                          </AvatarFallback>
+                        </>
+                      ) : (
+                        <AvatarFallback className="bg-green-600 text-white text-xs">
+                          <Bot className="w-4 h-4" />
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+
+                    <div
+                      className={`rounded-lg p-3 ${
+                        message.type === 'user'
+                          ? 'bg-blue-600 text-white'
+                          : message.type === 'system'
+                          ? 'bg-gray-100 text-gray-800 border'
+                          : 'bg-white text-gray-800 shadow border'
+                      }`}
+                    >
+                      <div className="whitespace-pre-wrap text-sm">
+                        {message.content}
+                      </div>
+                      <div
+                        className={`text-xs mt-1 ${
+                          message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                        }`}
+                      >
+                        {formatTime(message.timestamp)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              ))}
+
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-green-600 text-white text-xs">
+                        <Bot className="w-4 h-4" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="bg-white border rounded-lg p-3 shadow">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="border-t p-4">
+              <div className="flex space-x-2">
+                <Input
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ketik pertanyaan Anda..."
+                  className="flex-1"
+                  disabled={isTyping}
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || isTyping}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
               </div>
-            ))}
-            <div ref={messagesEndRef} />
+              <p className="text-xs text-gray-500 mt-2">
+                Tekan Enter untuk mengirim pesan
+              </p>
+            </div>
           </CardContent>
-
-          {/* Input */}
-          <div className="border-t p-4">
-            <div className="flex gap-2">
-              <Input
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ketik pesan Anda..."
-                className="flex-1"
-              />
-              <Button onClick={handleSendMessage} className="bg-green-600 hover:bg-green-700">
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
         </Card>
-
-        {/* Quick Actions */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="p-4">
-            <h3 className="font-semibold text-gray-900 mb-2">Pertanyaan Umum</h3>
-            <div className="space-y-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-left justify-start"
-                onClick={() => setInputMessage('Bagaimana cara mengurus surat keterangan?')}
-              >
-                Cara mengurus surat keterangan
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-left justify-start"
-                onClick={() => setInputMessage('Jam buka kantor desa')}
-              >
-                Jam buka kantor desa
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-left justify-start"
-                onClick={() => setInputMessage('Lokasi kantor desa')}
-              >
-                Lokasi kantor desa
-              </Button>
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <h3 className="font-semibold text-gray-900 mb-2">Kontak Langsung</h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              <p>📞 Telepon: (021) 1234-5678</p>
-              <p>📧 Email: info@desampelan.id</p>
-              <p>🏢 Alamat: Jl. Desa Ampelan No. 123</p>
-              <p>⏰ Senin-Jumat, 08.00-16.00 WIB</p>
-            </div>
-          </Card>
-        </div>
       </div>
     </div>
   );

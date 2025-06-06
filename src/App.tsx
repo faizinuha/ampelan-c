@@ -1,3 +1,4 @@
+
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -14,8 +15,6 @@ import Activities from './pages/Activities';
 import NotFound from './pages/NotFound';
 import MainLayout from './layouts/MainLayouts';
 import NotificationPermission from './components/NotificationPermission';
-import CustomerServiceChat from './pages/CustomerServiceChat';
-import NewsDetail from './pages/NewsDetail';
 
 const queryClient = new QueryClient();
 
@@ -31,12 +30,10 @@ const App = () => (
             <Route path="/" element={<MainLayout />}>
               <Route index element={<Index />} />
               <Route path="news" element={<News />} />
-              <Route path="news/:id" element={<NewsDetail />} />
               <Route path="activities" element={<Activities />} />
               <Route path="profile" element={<Profile />} />
               <Route path="admin" element={<Admin />} />
             </Route>
-            <Route path="/customer-service" element={<CustomerServiceChat />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="*" element={<NotFound />} />
