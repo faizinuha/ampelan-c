@@ -1,3 +1,4 @@
+
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -14,16 +15,16 @@ import Activities from './pages/Activities';
 import NotFound from './pages/NotFound';
 import MainLayout from './layouts/MainLayouts';
 import NotificationPermission from './components/NotificationPermission';
-import CustomerService from './components/CustomerService';
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <NotificationPermission />
           <Routes>
             <Route path="/" element={<MainLayout />}>
@@ -32,15 +33,14 @@ const App = () => (
               <Route path="activities" element={<Activities />} />
               <Route path="profile" element={<Profile />} />
               <Route path="admin" element={<Admin />} />
-              <Route path="customer-service" element={<CustomerService />} />
             </Route>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
