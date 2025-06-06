@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +15,16 @@ interface Message {
   sender_type: 'user' | 'agent' | 'bot';
   created_at: string;
   user_id?: string;
+}
+
+// Type for database response
+interface DatabaseMessage {
+  id: string;
+  message: string;
+  sender_type: string;
+  created_at: string;
+  user_id: string;
+  updated_at: string;
 }
 
 const CustomerServiceChat = () => {
@@ -87,7 +96,15 @@ const CustomerServiceChat = () => {
       }
 
       if (data) {
-        setMessages(data);
+        // Convert database response to Message type
+        const typedMessages: Message[] = data.map((dbMessage: DatabaseMessage) => ({
+          id: dbMessage.id,
+          message: dbMessage.message,
+          sender_type: dbMessage.sender_type as 'user' | 'agent' | 'bot',
+          created_at: dbMessage.created_at,
+          user_id: dbMessage.user_id
+        }));
+        setMessages(typedMessages);
       }
     } catch (error) {
       console.error('Error in loadChatHistory:', error);
@@ -118,7 +135,15 @@ const CustomerServiceChat = () => {
       }
 
       if (data) {
-        setMessages(prev => [...prev, data]);
+        // Convert database response to Message type
+        const typedMessage: Message = {
+          id: data.id,
+          message: data.message,
+          sender_type: data.sender_type as 'user' | 'agent' | 'bot',
+          created_at: data.created_at,
+          user_id: data.user_id
+        };
+        setMessages(prev => [...prev, typedMessage]);
       }
     } catch (error) {
       console.error('Error in sendBotMessage:', error);
@@ -165,7 +190,15 @@ const CustomerServiceChat = () => {
       }
 
       if (userMessage) {
-        setMessages(prev => [...prev, userMessage]);
+        // Convert database response to Message type
+        const typedUserMessage: Message = {
+          id: userMessage.id,
+          message: userMessage.message,
+          sender_type: userMessage.sender_type as 'user' | 'agent' | 'bot',
+          created_at: userMessage.created_at,
+          user_id: userMessage.user_id
+        };
+        setMessages(prev => [...prev, typedUserMessage]);
       }
 
       setIsTyping(true);
@@ -189,7 +222,15 @@ const CustomerServiceChat = () => {
         if (botError) {
           console.error('Error saving bot message:', botError);
         } else if (botMessage) {
-          setMessages(prev => [...prev, botMessage]);
+          // Convert database response to Message type
+          const typedBotMessage: Message = {
+            id: botMessage.id,
+            message: botMessage.message,
+            sender_type: botMessage.sender_type as 'user' | 'agent' | 'bot',
+            created_at: botMessage.created_at,
+            user_id: botMessage.user_id
+          };
+          setMessages(prev => [...prev, typedBotMessage]);
         }
 
         setIsTyping(false);

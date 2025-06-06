@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -59,7 +58,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (profileData) {
-        setProfile(profileData);
+        // Type-safe conversion from database response to Profile type
+        const typedProfile: Profile = {
+          id: profileData.id,
+          full_name: profileData.full_name,
+          phone: profileData.phone,
+          address: profileData.address,
+          rt_rw: profileData.rt_rw,
+          occupation: profileData.occupation,
+          role: profileData.role as 'admin' | 'user', // Type assertion for role
+          avatar_url: profileData.avatar_url,
+          created_at: profileData.created_at,
+          updated_at: profileData.updated_at
+        };
+
+        setProfile(typedProfile);
         setUser({
           id: profileData.id,
           email: '', // We don't store email in profiles table
