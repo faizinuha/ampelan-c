@@ -58,6 +58,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (profileData) {
+        // Ensure role is properly typed
+        const userRole = (profileData.role === 'admin' || profileData.role === 'user') 
+          ? profileData.role as 'admin' | 'user'
+          : 'user' as const;
+
         // Type-safe conversion from database response to Profile type
         const typedProfile: Profile = {
           id: profileData.id,
@@ -66,7 +71,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           address: profileData.address,
           rt_rw: profileData.rt_rw,
           occupation: profileData.occupation,
-          role: profileData.role as 'admin' | 'user', // Type assertion for role
+          role: userRole,
           avatar_url: profileData.avatar_url,
           created_at: profileData.created_at,
           updated_at: profileData.updated_at
@@ -77,7 +82,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           id: profileData.id,
           email: '', // We don't store email in profiles table
           name: profileData.full_name,
-          role: profileData.role as 'admin' | 'user',
+          role: userRole,
           avatar: profileData.avatar_url || undefined
         });
       }

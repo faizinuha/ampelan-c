@@ -1,264 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, Bot, User, MessageCircle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
-interface Message {
-  id: string;
-  message: string;
-  sender_type: 'user' | 'agent' | 'bot';
-  created_at: string;
-  user_id?: string;
-}
-
-// Type for database response
-interface DatabaseMessage {
-  id: string;
-  message: string;
-  sender_type: string;
-  created_at: string;
-  user_id: string;
-  updated_at: string;
-}
+import React, { useRef, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { MessageCircle } from 'lucide-react';
+import { useCustomerServiceChat } from '@/hooks/useCustomerServiceChat';
+import { ChatMessage } from '@/components/customerService/ChatMessage';
+import { TypingIndicator } from '@/components/customerService/TypingIndicator';
+import { ChatInput } from '@/components/customerService/ChatInput';
+import { ChatHeader } from '@/components/customerService/ChatHeader';
 
 const CustomerServiceChat = () => {
-  const { user, profile } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    messages,
+    inputMessage,
+    setInputMessage,
+    isTyping,
+    isLoading,
+    handleSendMessage,
+    handleKeyPress
+  } = useCustomerServiceChat();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      loadChatHistory();
-      
-      // Send welcome message if no chat history
-      const sendWelcomeMessage = async () => {
-        const { data: existingMessages } = await supabase
-          .from('customer_service_chats')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1);
-
-        if (!existingMessages || existingMessages.length === 0) {
-          await sendBotMessage(`Selamat datang di Customer Service Desa Ampelan! 👋\n\n${user ? `Halo, ${profile?.full_name || user.name}!` : 'Halo!'} Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`);
-        }
-      };
-
-      sendWelcomeMessage();
-    } else {
-      // For non-logged in users, show welcome message
-      const welcomeMessage: Message = {
-        id: '1',
-        message: `Selamat datang di Customer Service Desa Ampelan! 👋\n\nHalo! Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`,
-        sender_type: 'bot',
-        created_at: new Date().toISOString()
-      };
-      setMessages([welcomeMessage]);
-      setIsLoading(false);
-    }
-  }, [user, profile]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const loadChatHistory = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('customer_service_chats')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error loading chat history:', error);
-        toast({
-          title: "Error",
-          description: "Gagal memuat riwayat chat",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data) {
-        // Convert database response to Message type
-        const typedMessages: Message[] = data.map((dbMessage: DatabaseMessage) => ({
-          id: dbMessage.id,
-          message: dbMessage.message,
-          sender_type: dbMessage.sender_type as 'user' | 'agent' | 'bot',
-          created_at: dbMessage.created_at,
-          user_id: dbMessage.user_id
-        }));
-        setMessages(typedMessages);
-      }
-    } catch (error) {
-      console.error('Error in loadChatHistory:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const sendBotMessage = async (message: string) => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('customer_service_chats')
-        .insert([
-          {
-            user_id: user.id,
-            message: message,
-            sender_type: 'bot'
-          }
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error sending bot message:', error);
-        return;
-      }
-
-      if (data) {
-        // Convert database response to Message type
-        const typedMessage: Message = {
-          id: data.id,
-          message: data.message,
-          sender_type: data.sender_type as 'user' | 'agent' | 'bot',
-          created_at: data.created_at,
-          user_id: data.user_id
-        };
-        setMessages(prev => [...prev, typedMessage]);
-      }
-    } catch (error) {
-      console.error('Error in sendBotMessage:', error);
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
-
-    if (!user) {
-      toast({
-        title: "Info",
-        description: "Silakan login terlebih dahulu untuk menggunakan chat",
-        variant: "default",
-      });
-      return;
-    }
-
-    const messageText = inputMessage.trim();
-    setInputMessage('');
-
-    try {
-      // Save user message to database
-      const { data: userMessage, error: userError } = await supabase
-        .from('customer_service_chats')
-        .insert([
-          {
-            user_id: user.id,
-            message: messageText,
-            sender_type: 'user'
-          }
-        ])
-        .select()
-        .single();
-
-      if (userError) {
-        console.error('Error saving user message:', userError);
-        toast({
-          title: "Error",
-          description: "Gagal mengirim pesan",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (userMessage) {
-        // Convert database response to Message type
-        const typedUserMessage: Message = {
-          id: userMessage.id,
-          message: userMessage.message,
-          sender_type: userMessage.sender_type as 'user' | 'agent' | 'bot',
-          created_at: userMessage.created_at,
-          user_id: userMessage.user_id
-        };
-        setMessages(prev => [...prev, typedUserMessage]);
-      }
-
-      setIsTyping(true);
-
-      // Simulate bot response after 2 seconds
-      setTimeout(async () => {
-        const botResponse = 'Terima kasih atas pertanyaan Anda. Tim customer service kami akan segera membantu Anda. Untuk informasi lebih detail, silakan hubungi kantor desa di (0271) 123456.';
-        
-        const { data: botMessage, error: botError } = await supabase
-          .from('customer_service_chats')
-          .insert([
-            {
-              user_id: user.id,
-              message: botResponse,
-              sender_type: 'bot'
-            }
-          ])
-          .select()
-          .single();
-
-        if (botError) {
-          console.error('Error saving bot message:', botError);
-        } else if (botMessage) {
-          // Convert database response to Message type
-          const typedBotMessage: Message = {
-            id: botMessage.id,
-            message: botMessage.message,
-            sender_type: botMessage.sender_type as 'user' | 'agent' | 'bot',
-            created_at: botMessage.created_at,
-            user_id: botMessage.user_id
-          };
-          setMessages(prev => [...prev, typedBotMessage]);
-        }
-
-        setIsTyping(false);
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error in handleSendMessage:', error);
-      toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat mengirim pesan",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('id-ID', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
+  }, [messages]);
 
   if (isLoading) {
     return (
@@ -283,111 +48,26 @@ const CustomerServiceChat = () => {
         </div>
 
         <Card className="h-[600px] flex flex-col">
-          <CardHeader className="bg-green-600 text-white rounded-t-lg">
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Bot className="w-5 h-5" />
-                <span>CS Desa Ampelan</span>
-              </div>
-              <Badge variant="secondary" className="bg-green-500 text-white">
-                Online
-              </Badge>
-            </CardTitle>
-          </CardHeader>
+          <ChatHeader />
 
           <CardContent className="flex-1 flex flex-col p-0">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`flex items-start space-x-2 max-w-[80%] ${
-                      message.sender_type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                    }`}
-                  >
-                    <Avatar className="w-8 h-8">
-                      {message.sender_type === 'user' ? (
-                        <>
-                          <AvatarImage src={profile?.avatar_url || ''} />
-                          <AvatarFallback className="bg-blue-600 text-white text-xs">
-                            <User className="w-4 h-4" />
-                          </AvatarFallback>
-                        </>
-                      ) : (
-                        <AvatarFallback className="bg-green-600 text-white text-xs">
-                          <Bot className="w-4 h-4" />
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-
-                    <div
-                      className={`rounded-lg p-3 ${
-                        message.sender_type === 'user'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-gray-800 shadow border'
-                      }`}
-                    >
-                      <div className="whitespace-pre-wrap text-sm">
-                        {message.message}
-                      </div>
-                      <div
-                        className={`text-xs mt-1 ${
-                          message.sender_type === 'user' ? 'text-blue-100' : 'text-gray-500'
-                        }`}
-                      >
-                        {formatTime(message.created_at)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ChatMessage key={message.id} message={message} />
               ))}
 
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="w-8 h-8">
-                      <AvatarFallback className="bg-green-600 text-white text-xs">
-                        <Bot className="w-4 h-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="bg-white border rounded-lg p-3 shadow">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {isTyping && <TypingIndicator />}
 
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-t p-4">
-              <div className="flex space-x-2">
-                <Input
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Ketik pertanyaan Anda..."
-                  className="flex-1"
-                  disabled={isTyping}
-                />
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || isTyping}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Tekan Enter untuk mengirim pesan
-              </p>
-            </div>
+            <ChatInput
+              inputMessage={inputMessage}
+              setInputMessage={setInputMessage}
+              isTyping={isTyping}
+              onSendMessage={handleSendMessage}
+              onKeyPress={handleKeyPress}
+            />
           </CardContent>
         </Card>
       </div>
