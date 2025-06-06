@@ -8,12 +8,11 @@ import { useNews } from '@/hooks/useNews';
 
 const NewsDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { getAllNews } = useNews();
-  const allNews = getAllNews();
+  const { news } = useNews();
   
-  const news = allNews.find(item => item.id === id);
+  const newsItem = news.find(item => item.id === id);
 
-  if (!news) {
+  if (!newsItem) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4">
@@ -47,11 +46,11 @@ const NewsDetail = () => {
         </div>
 
         <Card className="overflow-hidden">
-          {news.image_url && (
+          {newsItem.image_url && (
             <div className="aspect-video overflow-hidden">
               <img
-                src={news.image_url}
-                alt={news.title}
+                src={newsItem.image_url}
+                alt={newsItem.title}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -61,7 +60,7 @@ const NewsDetail = () => {
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                <span>{new Date(news.created_at).toLocaleDateString('id-ID', {
+                <span>{new Date(newsItem.created_at).toLocaleDateString('id-ID', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
@@ -69,17 +68,17 @@ const NewsDetail = () => {
               </div>
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                <span>{news.author_name}</span>
+                <span>{newsItem.author_name}</span>
               </div>
             </div>
             
             <CardTitle className="text-3xl font-bold text-gray-900 leading-tight">
-              {news.title}
+              {newsItem.title}
             </CardTitle>
             
-            {news.excerpt && (
+            {newsItem.excerpt && (
               <p className="text-lg text-gray-600 mt-4">
-                {news.excerpt}
+                {newsItem.excerpt}
               </p>
             )}
           </CardHeader>
@@ -87,7 +86,7 @@ const NewsDetail = () => {
           <CardContent>
             <div className="prose prose-lg max-w-none">
               <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-                {news.content}
+                {newsItem.content}
               </div>
             </div>
           </CardContent>
