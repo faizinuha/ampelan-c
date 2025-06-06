@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bell, Calendar, MapPin, Users } from 'lucide-react';
@@ -261,12 +260,14 @@ const Home = () => {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-600 line-clamp-3">{news.excerpt}</p>
-                    <Button
-                      variant="link"
-                      className="p-0 mt-2 text-green-600 hover:text-green-700"
-                    >
-                      Baca selengkapnya →
-                    </Button>
+                    <Link to={`/news/${news.id}`}>
+                      <Button
+                        variant="link"
+                        className="p-0 mt-2 text-green-600 hover:text-green-700"
+                      >
+                        Baca selengkapnya →
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}
