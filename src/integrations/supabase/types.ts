@@ -48,6 +48,33 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_service_chats: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          sender_type: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          sender_type: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          sender_type?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       document_submissions: {
         Row: {
           admin_notes: string | null

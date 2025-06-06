@@ -7,13 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Bot, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
-  type: 'user' | 'bot' | 'system';
-  content: string;
-  timestamp: Date;
-  sender?: string;
+  message: string;
+  sender_type: 'user' | 'agent' | 'bot';
+  created_at: string;
+  user_id?: string;
 }
 
 const CustomerServiceChat = () => {
@@ -21,16 +23,39 @@ const CustomerServiceChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const welcomeMessage: Message = {
-      id: '1',
-      type: 'system',
-      content: `Selamat datang di Customer Service Desa Ampelan! 👋\n\n${user ? `Halo, ${profile?.full_name || user.name}!` : 'Halo!'} Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`,
-      timestamp: new Date()
-    };
-    setMessages([welcomeMessage]);
+    if (user) {
+      loadChatHistory();
+      
+      // Send welcome message if no chat history
+      const sendWelcomeMessage = async () => {
+        const { data: existingMessages } = await supabase
+          .from('customer_service_chats')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+
+        if (!existingMessages || existingMessages.length === 0) {
+          await sendBotMessage(`Selamat datang di Customer Service Desa Ampelan! 👋\n\n${user ? `Halo, ${profile?.full_name || user.name}!` : 'Halo!'} Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`);
+        }
+      };
+
+      sendWelcomeMessage();
+    } else {
+      // For non-logged in users, show welcome message
+      const welcomeMessage: Message = {
+        id: '1',
+        message: `Selamat datang di Customer Service Desa Ampelan! 👋\n\nHalo! Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`,
+        sender_type: 'bot',
+        created_at: new Date().toISOString()
+      };
+      setMessages([welcomeMessage]);
+      setIsLoading(false);
+    }
   }, [user, profile]);
 
   useEffect(() => {
@@ -41,33 +66,143 @@ const CustomerServiceChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const loadChatHistory = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('customer_service_chats')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading chat history:', error);
+        toast({
+          title: "Error",
+          description: "Gagal memuat riwayat chat",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (data) {
+        setMessages(data);
+      }
+    } catch (error) {
+      console.error('Error in loadChatHistory:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sendBotMessage = async (message: string) => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('customer_service_chats')
+        .insert([
+          {
+            user_id: user.id,
+            message: message,
+            sender_type: 'bot'
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error sending bot message:', error);
+        return;
+      }
+
+      if (data) {
+        setMessages(prev => [...prev, data]);
+      }
+    } catch (error) {
+      console.error('Error in sendBotMessage:', error);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: inputMessage.trim(),
-      timestamp: new Date(),
-      sender: profile?.full_name || user?.name || 'Anda'
-    };
+    if (!user) {
+      toast({
+        title: "Info",
+        description: "Silakan login terlebih dahulu untuk menggunakan chat",
+        variant: "default",
+      });
+      return;
+    }
 
-    setMessages(prev => [...prev, userMessage]);
+    const messageText = inputMessage.trim();
     setInputMessage('');
-    setIsTyping(true);
 
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'bot',
-        content: 'Terima kasih atas pertanyaan Anda. Tim customer service kami akan segera membantu Anda. Untuk informasi lebih detail, silakan hubungi kantor desa di (0271) 123456.',
-        timestamp: new Date(),
-        sender: 'CS Desa Ampelan'
-      };
+    try {
+      // Save user message to database
+      const { data: userMessage, error: userError } = await supabase
+        .from('customer_service_chats')
+        .insert([
+          {
+            user_id: user.id,
+            message: messageText,
+            sender_type: 'user'
+          }
+        ])
+        .select()
+        .single();
 
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 2000);
+      if (userError) {
+        console.error('Error saving user message:', userError);
+        toast({
+          title: "Error",
+          description: "Gagal mengirim pesan",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (userMessage) {
+        setMessages(prev => [...prev, userMessage]);
+      }
+
+      setIsTyping(true);
+
+      // Simulate bot response after 2 seconds
+      setTimeout(async () => {
+        const botResponse = 'Terima kasih atas pertanyaan Anda. Tim customer service kami akan segera membantu Anda. Untuk informasi lebih detail, silakan hubungi kantor desa di (0271) 123456.';
+        
+        const { data: botMessage, error: botError } = await supabase
+          .from('customer_service_chats')
+          .insert([
+            {
+              user_id: user.id,
+              message: botResponse,
+              sender_type: 'bot'
+            }
+          ])
+          .select()
+          .single();
+
+        if (botError) {
+          console.error('Error saving bot message:', botError);
+        } else if (botMessage) {
+          setMessages(prev => [...prev, botMessage]);
+        }
+
+        setIsTyping(false);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error in handleSendMessage:', error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat mengirim pesan",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -77,12 +212,23 @@ const CustomerServiceChat = () => {
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('id-ID', { 
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('id-ID', { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat chat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -113,15 +259,15 @@ const CustomerServiceChat = () => {
               {messages.map((message) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`flex items-start space-x-2 max-w-[80%] ${
-                      message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+                      message.sender_type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
                     }`}
                   >
                     <Avatar className="w-8 h-8">
-                      {message.type === 'user' ? (
+                      {message.sender_type === 'user' ? (
                         <>
                           <AvatarImage src={profile?.avatar_url || ''} />
                           <AvatarFallback className="bg-blue-600 text-white text-xs">
@@ -137,22 +283,20 @@ const CustomerServiceChat = () => {
 
                     <div
                       className={`rounded-lg p-3 ${
-                        message.type === 'user'
+                        message.sender_type === 'user'
                           ? 'bg-blue-600 text-white'
-                          : message.type === 'system'
-                          ? 'bg-gray-100 text-gray-800 border'
                           : 'bg-white text-gray-800 shadow border'
                       }`}
                     >
                       <div className="whitespace-pre-wrap text-sm">
-                        {message.content}
+                        {message.message}
                       </div>
                       <div
                         className={`text-xs mt-1 ${
-                          message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                          message.sender_type === 'user' ? 'text-blue-100' : 'text-gray-500'
                         }`}
                       >
-                        {formatTime(message.timestamp)}
+                        {formatTime(message.created_at)}
                       </div>
                     </div>
                   </div>
