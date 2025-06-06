@@ -4,6 +4,7 @@ import Navigation from '@/components/Navigation';
 import NotificationCenter from '@/components/NotificationCenter';
 import NotificationPermission from '@/components/NotificationPermission';
 import Footer from '@/components/Footer';
+import FloatingChatButton from '@/components/FloatingChatButton';
 import { Outlet } from 'react-router-dom';
 
 const MainLayout = () => {
@@ -15,7 +16,6 @@ const MainLayout = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navigation />
 
-      {/* Hanya tampil jika bukan halaman login/register/chat */}
       {!isAuthPage && !isChatPage && (
         <>
           <NotificationCenter />
@@ -27,8 +27,10 @@ const MainLayout = () => {
         <Outlet />
       </main>
 
-      {/* Footer hanya untuk halaman umum, tidak untuk chat */}
       {!isAuthPage && !isChatPage && <Footer />}
+      
+      {/* Floating Chat Button - tampil di semua halaman kecuali auth dan chat */}
+      {!isAuthPage && !isChatPage && <FloatingChatButton />}
     </div>
   );
 };

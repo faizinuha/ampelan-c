@@ -53,34 +53,40 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-green-600 to-green-800 text-white py-20 overflow-hidden">
+      {/* Hero Section dengan background yang lebih menarik */}
+      <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-green-800 text-white py-20 overflow-hidden">
         <div className="absolute inset-0">
           <img 
-            src="https://images.unsplash.com/photo-1500673922987-e212871fec22?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
-            alt="Beautiful village landscape" 
-            className="w-full h-full object-cover opacity-30"
+            src="https://images.unsplash.com/photo-1539650116574-75c0c6d73d0e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            alt="Beautiful Indonesian village landscape" 
+            className="w-full h-full object-cover opacity-25"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-green-600/80 to-green-800/80"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-green-600/85 via-green-700/80 to-green-800/90"></div>
         </div>
+        
+        {/* Decorative elements */}
+        <div className="absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl"></div>
+        <div className="absolute bottom-32 right-16 w-32 h-32 bg-yellow-400/20 rounded-full blur-2xl"></div>
+        <div className="absolute top-40 right-20 w-16 h-16 bg-blue-400/15 rounded-full blur-lg"></div>
+        
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg">
               Selamat Datang di Desa Ampelan
             </h1>
-            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
+            <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-95 drop-shadow-md">
               Portal resmi Desa Ampelan - Melayani dengan sepenuh hati untuk kemajuan desa dan kesejahteraan masyarakat
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <DocumentSubmissionForm 
                 trigger={
-                  <Button size="lg" className="bg-yellow-500 text-green-800 hover:bg-yellow-400 font-semibold">
+                  <Button size="lg" className="bg-yellow-500 text-green-800 hover:bg-yellow-400 font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
                     Layanan Online
                   </Button>
                 }
               />
               <Link to="/profile">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-800">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-green-800 shadow-lg hover:shadow-xl transition-all duration-300">
                   Profil Saya
                 </Button>
               </Link>
@@ -261,12 +267,14 @@ const Home = () => {
                   </CardHeader>
                   <CardContent>
                     <p className="text-gray-600 line-clamp-3">{news.excerpt}</p>
-                    <Button
-                      variant="link"
-                      className="p-0 mt-2 text-green-600 hover:text-green-700"
-                    >
-                      Baca selengkapnya →
-                    </Button>
+                    <Link to={`/news/${news.id}`}>
+                      <Button
+                        variant="link"
+                        className="p-0 mt-2 text-green-600 hover:text-green-700"
+                      >
+                        Baca selengkapnya →
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}

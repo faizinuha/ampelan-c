@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Profile, AuthContextType } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -57,14 +56,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session);
         setSession(session);
         
         if (session?.user) {
-          // Show welcome message for successful auth
           if (event === 'SIGNED_IN') {
             toast({
               title: "Selamat Datang!",
@@ -72,7 +69,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
           }
           
-          // Defer profile fetching to avoid blocking
           setTimeout(() => {
             fetchProfile(session.user.id);
           }, 0);
@@ -80,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setProfile(null);
           
-          // Show message for sign out
           if (event === 'SIGNED_OUT') {
             toast({
               title: "Sampai Jumpa!",
@@ -92,7 +87,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {

@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Bot, User, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
 
 interface Message {
   id: string;
@@ -17,50 +16,14 @@ interface Message {
   sender?: string;
 }
 
-interface FAQItem {
-  question: string;
-  answer: string;
-  keywords: string[];
-}
-
 const CustomerServiceChat = () => {
   const { user, profile } = useAuth();
-  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const faqData: FAQItem[] = [
-    {
-      question: "Bagaimana cara mengurus surat domisili?",
-      answer: "Untuk mengurus surat domisili, Anda perlu membawa: 1) KTP asli dan fotocopy, 2) KK asli dan fotocopy, 3) Surat pengantar dari RT/RW. Datang ke kantor desa pada jam kerja (08:00-15:00) hari Senin-Jumat.",
-      keywords: ["surat", "domisili", "ktp", "kk", "rt", "rw"]
-    },
-    {
-      question: "Dimana lokasi kantor desa?",
-      answer: "Kantor Desa Ampelan berlokasi di Jl. Raya Desa Ampelan No. 123, buka Senin-Jumat jam 08:00-15:00. Anda bisa menghubungi (0271) 123456 untuk informasi lebih lanjut.",
-      keywords: ["lokasi", "kantor", "desa", "alamat", "jam", "buka", "telepon"]
-    },
-    {
-      question: "Ada tukang listrik yang bisa dipanggil?",
-      answer: "Ya, ada beberapa tukang listrik di desa: 1) Pak Joko (081234567892), 2) Pak Budi (081234567893). Mereka melayani perbaikan listrik rumah 24 jam.",
-      keywords: ["tukang", "listrik", "perbaikan", "joko", "budi", "24 jam"]
-    },
-    {
-      question: "Kapan ada kegiatan posyandu?",
-      answer: "Posyandu rutin dilaksanakan setiap Rabu minggu ke-2 dan ke-4 setiap bulan di Balai Desa, jam 09:00-12:00. Bawa buku KIA untuk balita dan KTP untuk ibu hamil.",
-      keywords: ["posyandu", "rabu", "balai", "desa", "kia", "balita", "ibu", "hamil"]
-    },
-    {
-      question: "Bagaimana cara daftar bantuan sosial?",
-      answer: "Pendaftaran bantuan sosial dibuka setiap 6 bulan sekali. Syarat: 1) KTP Desa Ampelan, 2) KK, 3) Surat keterangan tidak mampu dari RT/RW. Info pendaftaran akan diumumkan di website dan papan pengumuman desa.",
-      keywords: ["bantuan", "sosial", "daftar", "ktp", "kk", "tidak", "mampu", "rt", "rw"]
-    }
-  ];
-
   useEffect(() => {
-    // Welcome message when component mounts
     const welcomeMessage: Message = {
       id: '1',
       type: 'system',
@@ -78,46 +41,6 @@ const CustomerServiceChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const findBestAnswer = (userMessage: string): string | null => {
-    const lowercaseMessage = userMessage.toLowerCase();
-    
-    // Find FAQ with most matching keywords
-    let bestMatch: FAQItem | null = null;
-    let maxScore = 0;
-    
-    faqData.forEach(faq => {
-      let score = 0;
-      faq.keywords.forEach(keyword => {
-        if (lowercaseMessage.includes(keyword.toLowerCase())) {
-          score++;
-        }
-      });
-      
-      if (score > maxScore && score > 0) {
-        maxScore = score;
-        bestMatch = faq;
-      }
-    });
-    
-    return bestMatch ? bestMatch.answer : null;
-  };
-
-  const getDefaultResponse = (): string => {
-    const responses = [
-      "Terima kasih atas pertanyaan Anda. Untuk informasi lebih detail, silakan hubungi kantor desa di (0271) 123456 atau datang langsung ke Jl. Raya Desa Ampelan No. 123.",
-      "Maaf, saya belum memiliki informasi spesifik untuk pertanyaan tersebut. Tim customer service kami akan segera menghubungi Anda. Atau Anda bisa langsung ke kantor desa untuk bantuan lebih lanjut.",
-      "Pertanyaan Anda sudah saya catat. Untuk jawaban yang lebih akurat, silakan menghubungi petugas desa di jam kerja (08:00-15:00) atau WhatsApp ke 08123456789."
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
-
-  const simulateTyping = () => {
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-    }, 1000 + Math.random() * 2000); // Random delay 1-3 seconds
-  };
-
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
@@ -131,24 +54,20 @@ const CustomerServiceChat = () => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
+    setIsTyping(true);
 
-    // Simulate typing
-    simulateTyping();
-
-    // Get bot response
     setTimeout(() => {
-      const botAnswer = findBestAnswer(inputMessage) || getDefaultResponse();
-      
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
-        content: botAnswer,
+        content: 'Terima kasih atas pertanyaan Anda. Tim customer service kami akan segera membantu Anda. Untuk informasi lebih detail, silakan hubungi kantor desa di (0271) 123456.',
         timestamp: new Date(),
         sender: 'CS Desa Ampelan'
       };
 
       setMessages(prev => [...prev, botMessage]);
-    }, 1000 + Math.random() * 2000);
+      setIsTyping(false);
+    }, 2000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -190,7 +109,6 @@ const CustomerServiceChat = () => {
           </CardHeader>
 
           <CardContent className="flex-1 flex flex-col p-0">
-            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((message) => (
                 <div
@@ -263,7 +181,6 @@ const CustomerServiceChat = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
             <div className="border-t p-4">
               <div className="flex space-x-2">
                 <Input
