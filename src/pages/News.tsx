@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,8 @@ const News = () => {
   const [newsData, setNewsData] = useState<NewsPost[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [dataSource, setDataSource] = useState<'loading' | 'fake' | 'real' | 'mixed'>('loading');
 
   const categories = [
     'Musyawarah',
@@ -26,7 +28,7 @@ const News = () => {
     'Umum'
   ];
 
-  // Pre-load fake data for instant loading
+  // Enhanced fake data with better variety
   const fakeNews = useMemo(() => [
     {
       id: 'fake-1',
@@ -102,7 +104,7 @@ const News = () => {
     }
   ], []);
 
-  // Optimized filtering with useMemo
+  // Optimized filtering with better performance
   const filteredNews = useMemo(() => {
     let filtered = newsData;
 
@@ -118,47 +120,62 @@ const News = () => {
       filtered = filtered.filter(news => news.category === selectedCategory);
     }
 
-    return filtered;
+    // Sort by date (newest first)
+    return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [newsData, searchTerm, selectedCategory]);
 
   useEffect(() => {
-    // Set fake data immediately for instant loading
-    setNewsData(fakeNews);
-    setIsLoading(false);
-    
-    // Then try to fetch real data in background
-    fetchNewsInBackground();
+    const fetchNews = async () => {
+      setIsLoading(true);
+      setDataSource('loading');
+      
+      // Start with fake data for instant display
+      setNewsData(fakeNews);
+      setDataSource('fake');
+      setIsLoading(false);
+      
+      // Then try to fetch real data
+      try {
+        const { data, error } = await supabase
+          .from('news_posts')
+          .select('*')
+          .eq('is_published', true)
+          .order('created_at', { ascending: false });
+
+        if (!error && data && data.length > 0) {
+          // Merge real data with fake data, removing duplicates
+          const realNews = data.map(item => ({
+            ...item,
+            id: `real-${item.id}`
+          }));
+          
+          const allNews = [...realNews, ...fakeNews];
+          setNewsData(allNews);
+          setDataSource(realNews.length > 0 ? 'mixed' : 'fake');
+        }
+      } catch (error) {
+        console.log('Failed to fetch real data, using fake data:', error);
+        setDataSource('fake');
+      }
+    };
+
+    fetchNews();
   }, [fakeNews]);
 
-  const fetchNewsInBackground = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('news_posts')
-        .select('*')
-        .eq('is_published', true)
-        .order('created_at', { ascending: false });
-
-      if (!error && data && data.length > 0) {
-        // Merge real data with fake data
-        const allNews = [...data, ...fakeNews];
-        setNewsData(allNews);
-      }
-    } catch (error) {
-      console.log('Background fetch failed, using cached data:', error);
-      // Keep using fake data if fetch fails
+  const getDataSourceBadge = () => {
+    switch (dataSource) {
+      case 'loading':
+        return <Badge variant="secondary">Memuat...</Badge>;
+      case 'fake':
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700">Data Demo</Badge>;
+      case 'real':
+        return <Badge variant="default" className="bg-green-600 text-white">Data Live</Badge>;
+      case 'mixed':
+        return <Badge variant="default" className="bg-purple-600 text-white">Data Campuran</Badge>;
+      default:
+        return null;
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat berita...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
@@ -170,19 +187,22 @@ const News = () => {
           alt="News and activities" 
           className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
         />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
           <div className="text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Berita & Kegiatan</h1>
             <p className="text-xl md:text-2xl opacity-90">Informasi terbaru dari Desa Ampelan</p>
+          </div>
+          <div className="hidden md:block">
+            {getDataSourceBadge()}
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
         {/* Filter Section */}
-        <Card className="bg-white/80 backdrop-blur-sm shadow-xl mb-8">
+        <Card className="bg-white/90 backdrop-blur-sm shadow-xl mb-8">
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col md:flex-row gap-4 items-center">
               <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -210,57 +230,116 @@ const News = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="md:hidden">
+                {getDataSourceBadge()}
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* News Grid - Optimized with better layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {filteredNews.map((news) => (
-            <Card
-              key={news.id}
-              className="overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white"
-            >
-              <div className="relative aspect-video overflow-hidden">
-                <img
-                  src={news.image_url || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
-                  alt={news.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                <div className="absolute top-4 left-4">
-                  <Badge className="bg-green-600 text-white">
-                    {news.category}
-                  </Badge>
-                </div>
-                <div className="absolute bottom-4 left-4 text-white">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4" />
-                    <span>{new Date(news.created_at).toLocaleDateString('id-ID')}</span>
-                  </div>
-                </div>
-              </div>
-              <CardHeader>
-                <CardTitle className="text-lg line-clamp-2 group-hover:text-green-600 transition-colors">
-                  {news.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 line-clamp-3 mb-4">{news.excerpt}</p>
-                <Button
-                  variant="link"
-                  className="p-0 text-green-600 hover:text-green-700"
-                >
-                  Baca selengkapnya →
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Stats Section */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <Card className="bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-4 text-center">
+              <h3 className="text-2xl font-bold text-green-600">{filteredNews.length}</h3>
+              <p className="text-sm text-gray-600">Total Berita</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-4 text-center">
+              <h3 className="text-2xl font-bold text-blue-600">{categories.length}</h3>
+              <p className="text-sm text-gray-600">Kategori</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-4 text-center">
+              <h3 className="text-2xl font-bold text-purple-600">
+                {filteredNews.filter(n => n.created_at >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()).length}
+              </h3>
+              <p className="text-sm text-gray-600">Minggu Ini</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-white/80 backdrop-blur-sm">
+            <CardContent className="p-4 text-center">
+              <h3 className="text-2xl font-bold text-orange-600">
+                {new Set(filteredNews.map(n => n.category)).size}
+              </h3>
+              <p className="text-sm text-gray-600">Aktif</p>
+            </CardContent>
+          </Card>
         </div>
 
-        {filteredNews.length === 0 && (
-          <Card className="bg-white/80 backdrop-blur-sm shadow-xl">
+        {/* News Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i} className="overflow-hidden animate-pulse">
+                <div className="aspect-video bg-gray-200"></div>
+                <CardHeader>
+                  <div className="h-6 bg-gray-200 rounded"></div>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {filteredNews.map((news) => (
+              <Card
+                key={news.id}
+                className="overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/95 backdrop-blur-sm"
+              >
+                <div className="relative aspect-video overflow-hidden">
+                  <img
+                    src={news.image_url || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
+                    alt={news.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                  <div className="absolute top-4 left-4">
+                    <Badge className="bg-green-600 text-white">
+                      {news.category}
+                    </Badge>
+                  </div>
+                  {news.id.startsWith('fake-') && (
+                    <div className="absolute top-4 right-4">
+                      <Badge variant="outline" className="bg-white/90 text-blue-600">
+                        Demo
+                      </Badge>
+                    </div>
+                  )}
+                  <div className="absolute bottom-4 left-4 text-white">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4" />
+                      <span>{new Date(news.created_at).toLocaleDateString('id-ID')}</span>
+                    </div>
+                  </div>
+                </div>
+                <CardHeader>
+                  <CardTitle className="text-lg line-clamp-2 group-hover:text-green-600 transition-colors">
+                    {news.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 line-clamp-3 mb-4">{news.excerpt}</p>
+                  <Button
+                    variant="link"
+                    className="p-0 text-green-600 hover:text-green-700"
+                  >
+                    Baca selengkapnya →
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {filteredNews.length === 0 && !isLoading && (
+          <Card className="bg-white/90 backdrop-blur-sm shadow-xl">
             <CardContent className="p-12 text-center">
               <h3 className="text-xl font-semibold text-gray-600 mb-2">Tidak ada berita ditemukan</h3>
               <p className="text-gray-500">Coba ubah filter atau kata kunci pencarian Anda</p>

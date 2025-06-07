@@ -52,7 +52,7 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white scroll-smooth">
       {/* Hero Section dengan background foto yang menarik */}
       <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-green-800 text-white py-20 overflow-hidden">
         <div className="absolute inset-0">
@@ -96,8 +96,8 @@ const Home = () => {
       </section>
 
       {/* Visi Misi Pemuda Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-50 to-green-50 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
+      <section className="py-16 bg-white/80 backdrop-blur-sm relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
           <img 
             src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
             alt="Youth background" 
@@ -116,10 +116,10 @@ const Home = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Visi */}
-            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/90 backdrop-blur-sm">
+            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/95 backdrop-blur-sm border-0 shadow-lg">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardHeader className="relative text-center">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <Target className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-xl text-blue-600">Visi</CardTitle>
@@ -132,10 +132,10 @@ const Home = () => {
             </Card>
 
             {/* Misi 1 */}
-            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/90 backdrop-blur-sm">
+            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/95 backdrop-blur-sm border-0 shadow-lg">
               <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardHeader className="relative text-center">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <Heart className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-xl text-green-600">Misi</CardTitle>
@@ -148,10 +148,10 @@ const Home = () => {
             </Card>
 
             {/* Misi 2 */}
-            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/90 backdrop-blur-sm">
+            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/95 backdrop-blur-sm border-0 shadow-lg">
               <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <CardHeader className="relative text-center">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-xl text-orange-600">Aksi</CardTitle>
@@ -167,8 +167,8 @@ const Home = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-green-50 opacity-50"></div>
+      <section className="py-16 bg-white/90 backdrop-blur-sm relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-green-50/50"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-center group">
@@ -204,7 +204,7 @@ const Home = () => {
       </section>
 
       {/* Services Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-blue-50">
+      <section className="py-16 bg-white/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -220,7 +220,7 @@ const Home = () => {
             {services.map((service, index) => (
               <Card
                 key={index}
-                className="relative overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group bg-white/80 backdrop-blur-sm"
+                className="relative overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group bg-white/95 backdrop-blur-sm border-0 shadow-lg"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative aspect-video overflow-hidden">
@@ -255,7 +255,7 @@ const Home = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
                         >
                           Ajukan Sekarang →
                         </Button>
@@ -270,7 +270,7 @@ const Home = () => {
       </section>
 
       {/* Latest News Section */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white/90 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
             <div>
@@ -282,7 +282,7 @@ const Home = () => {
               </p>
             </div>
             <Link to="/news">
-              <Button variant="outline">
+              <Button variant="outline" className="border-green-200 text-green-600 hover:bg-green-50">
                 Lihat Semua
               </Button>
             </Link>
@@ -291,7 +291,7 @@ const Home = () => {
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="overflow-hidden">
+                <Card key={i} className="overflow-hidden bg-white/90 backdrop-blur-sm">
                   <div className="aspect-video bg-gray-200 animate-pulse"></div>
                   <CardHeader>
                     <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
@@ -308,7 +308,7 @@ const Home = () => {
               {latestNews.map((news) => (
                 <Card
                   key={news.id}
-                  className="overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white"
+                  className="overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/95 backdrop-blur-sm border-0 shadow-lg"
                 >
                   <div className="relative aspect-video overflow-hidden">
                     <img
@@ -375,7 +375,7 @@ const Home = () => {
           <Link to="/register">
             <Button
               size="lg"
-              className="bg-yellow-500 text-green-800 hover:bg-yellow-400 font-semibold"
+              className="bg-yellow-500 text-green-800 hover:bg-yellow-400 font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
             >
               Daftar Sekarang
             </Button>
