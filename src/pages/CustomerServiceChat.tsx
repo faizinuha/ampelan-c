@@ -1,54 +1,54 @@
+"use client"
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Send, Bot, User, Phone, Mail, Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCustomerServiceChat } from '@/hooks/useCustomerServiceChat';
-import { ChatHeader } from '@/components/customerService/ChatHeader';
-import { ChatMessage } from '@/components/customerService/ChatMessage';
-import { ChatInput } from '@/components/customerService/ChatInput';
-import { TypingIndicator } from '@/components/customerService/TypingIndicator';
+import type React from "react"
+import { useState, useEffect, useRef } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { ArrowLeft, Bot, Phone, Mail, Clock } from "lucide-react"
+import { Link } from "react-router-dom"
+import { Badge } from "@/components/ui/badge"
+import { useAuth } from "@/contexts/AuthContext"
+import { useCustomerServiceChat } from "@/hooks/useCustomerServiceChat"
+import { ChatHeader } from "@/components/customerService/ChatHeader"
+import { ChatMessage } from "@/components/customerService/ChatMessage"
+import { ChatInput } from "@/components/customerService/ChatInput"
+import { TypingIndicator } from "@/components/customerService/TypingIndicator"
 
 const CustomerServiceChat = () => {
-  const { user, profile } = useAuth();
-  const { messages, sendMessage, isTyping } = useCustomerServiceChat();
-  const [inputMessage, setInputMessage] = useState('');
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { user, profile } = useAuth()
+  const { messages, sendMessage, isTyping, isLoading } = useCustomerServiceChat()
+  const [inputMessage, setInputMessage] = useState("")
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
     }
-  }, [messages, isTyping]);
+  }, [messages, isTyping])
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
-    
-    await sendMessage(inputMessage);
-    setInputMessage('');
-  };
+    if (!inputMessage.trim()) return
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+    await sendMessage(inputMessage)
+    setInputMessage("")
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
     }
-  };
+  }
 
   const quickReplies = [
-    'Jam operasional kantor desa',
-    'Cara mengurus surat keterangan',
-    'Informasi bantuan sosial',
-    'Prosedur pengurusan domisili',
-    'Kontak kepala desa',
-    'Agenda kegiatan desa'
-  ];
+    "Jam operasional kantor desa",
+    "Cara mengurus surat keterangan",
+    "Informasi bantuan sosial",
+    "Prosedur pengurusan domisili",
+    "Kontak kepala desa",
+    "Agenda kegiatan desa",
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50">
@@ -91,7 +91,7 @@ const CustomerServiceChat = () => {
                   <h3 className="font-semibold text-gray-900">Asisten Virtual</h3>
                   <p className="text-sm text-gray-600">Siap membantu 24/7</p>
                 </div>
-                
+
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center space-x-2 text-gray-600">
                     <Clock className="w-4 h-4" />
@@ -147,9 +147,10 @@ const CustomerServiceChat = () => {
                           Selamat datang di Customer Service Desa Ampelan!
                         </h3>
                         <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                          Saya siap membantu Anda dengan pertanyaan seputar layanan desa, prosedur administrasi, dan informasi lainnya.
+                          Saya siap membantu Anda dengan pertanyaan seputar layanan desa, prosedur administrasi, dan
+                          informasi lainnya.
                         </p>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-w-2xl mx-auto">
                           {quickReplies.map((reply, index) => (
                             <Button
@@ -180,6 +181,7 @@ const CustomerServiceChat = () => {
                   inputMessage={inputMessage}
                   setInputMessage={setInputMessage}
                   isTyping={isTyping}
+                  isLoading={isLoading}
                   onSendMessage={handleSendMessage}
                   onKeyPress={handleKeyPress}
                 />
@@ -192,7 +194,7 @@ const CustomerServiceChat = () => {
                 variant="outline"
                 size="sm"
                 className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                onClick={() => setInputMessage('Bagaimana cara mengurus surat keterangan?')}
+                onClick={() => setInputMessage("Bagaimana cara mengurus surat keterangan?")}
               >
                 📄 Surat Keterangan
               </Button>
@@ -200,7 +202,7 @@ const CustomerServiceChat = () => {
                 variant="outline"
                 size="sm"
                 className="text-green-600 border-green-200 hover:bg-green-50"
-                onClick={() => setInputMessage('Informasi bantuan sosial terbaru')}
+                onClick={() => setInputMessage("Informasi bantuan sosial terbaru")}
               >
                 🤝 Bantuan Sosial
               </Button>
@@ -208,7 +210,7 @@ const CustomerServiceChat = () => {
                 variant="outline"
                 size="sm"
                 className="text-purple-600 border-purple-200 hover:bg-purple-50"
-                onClick={() => setInputMessage('Jadwal kegiatan desa bulan ini')}
+                onClick={() => setInputMessage("Jadwal kegiatan desa bulan ini")}
               >
                 📅 Kegiatan Desa
               </Button>
@@ -216,7 +218,7 @@ const CustomerServiceChat = () => {
                 variant="outline"
                 size="sm"
                 className="text-orange-600 border-orange-200 hover:bg-orange-50"
-                onClick={() => setInputMessage('Kontak penting desa')}
+                onClick={() => setInputMessage("Kontak penting desa")}
               >
                 📞 Kontak
               </Button>
@@ -225,7 +227,7 @@ const CustomerServiceChat = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CustomerServiceChat;
+export default CustomerServiceChat
