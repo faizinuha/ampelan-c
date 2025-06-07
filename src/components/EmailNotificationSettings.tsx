@@ -9,7 +9,13 @@ import { Mail, Bell, Settings } from 'lucide-react';
 
 const EmailNotificationSettings = () => {
   const { user } = useAuth();
-  const { settings, isLoading, handleSettingChange, testEmailNotification } = useNotificationPreferences();
+  const { 
+    settings, 
+    isLoading, 
+    handleSettingChange, 
+    testEmailNotification,
+    testPushNotification 
+  } = useNotificationPreferences();
 
   if (!user) return null;
 
@@ -62,6 +68,7 @@ const EmailNotificationSettings = () => {
 
         <TestNotificationSection
           onTestNotification={testEmailNotification}
+          onTestPushNotification={testPushNotification}
           isLoading={isLoading}
         />
       </CardContent>

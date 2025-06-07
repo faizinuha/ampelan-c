@@ -16,6 +16,12 @@ export const useNotificationPreferences = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
 
+  // Check if device is mobile
+  const isMobile = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform));
+  };
+
   useEffect(() => {
     if (user) {
       fetchNotificationSettings();
@@ -95,9 +101,56 @@ export const useNotificationPreferences = () => {
     }
   };
 
-  const handleSettingChange = (key: keyof NotificationPreferences, value: boolean) => {
+  const handleSettingChange = async (key: keyof NotificationPreferences, value: boolean) => {
+    // Special handling for push notifications
+    if (key === 'push_notifications' && value === true) {
+      if (!('Notification' in window)) {
+        toast({
+          title: "Tidak Didukung",
+          description: "Browser Anda tidak mendukung notifikasi push",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check current permission
+      if (Notification.permission === 'denied') {
+        toast({
+          title: "Notifikasi Diblokir",
+          description: isMobile() 
+            ? "Buka pengaturan browser dan aktifkan notifikasi untuk situs ini"
+            : "Klik ikon gembok di address bar dan aktifkan notifikasi",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Request permission if not granted
+      if (Notification.permission !== 'granted') {
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            toast({
+              title: "Izin Diperlukan",
+              description: "Notifikasi push memerlukan izin dari browser",
+              variant: "destructive",
+            });
+            return;
+          }
+        } catch (error) {
+          console.error('Error requesting notification permission:', error);
+          toast({
+            title: "Error",
+            description: "Gagal meminta izin notifikasi. Silakan coba lagi",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     const newSettings = { ...settings, [key]: value };
-    updateNotificationSettings(newSettings);
+    await updateNotificationSettings(newSettings);
   };
 
   const testEmailNotification = async () => {
@@ -139,10 +192,64 @@ export const useNotificationPreferences = () => {
     }
   };
 
+  const testPushNotification = async () => {
+    if (!('Notification' in window)) {
+      toast({
+        title: "Tidak Didukung",
+        description: "Browser Anda tidak mendukung notifikasi push",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (Notification.permission !== 'granted') {
+      toast({
+        title: "Izin Diperlukan",
+        description: "Aktifkan notifikasi push terlebih dahulu",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const notification = new Notification("Test Notifikasi Push 🔔", {
+        body: "Ini adalah test notifikasi push dari Desa Ampelan",
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'test-push-notification',
+        requireInteraction: isMobile(),
+        vibrate: isMobile() ? [200, 100, 200] : undefined,
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      // Auto close after 5 seconds on desktop
+      if (!isMobile()) {
+        setTimeout(() => notification.close(), 5000);
+      }
+
+      toast({
+        title: "Test Notifikasi Push Dikirim!",
+        description: "Periksa notifikasi yang muncul",
+      });
+    } catch (error) {
+      console.error('Error sending push notification:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengirim test notifikasi push",
+        variant: "destructive",
+      });
+    }
+  };
+
   return {
     settings,
     isLoading,
     handleSettingChange,
     testEmailNotification,
+    testPushNotification,
   };
 };
