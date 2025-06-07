@@ -1,7 +1,5 @@
 "use client"
-
-import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -17,8 +15,8 @@ import { TypingIndicator } from "@/components/customerService/TypingIndicator"
 
 const CustomerServiceChat = () => {
   const { user, profile } = useAuth()
-  const { messages, sendMessage, isTyping, isLoading } = useCustomerServiceChat()
-  const [inputMessage, setInputMessage] = useState("")
+  const { messages, inputMessage, setInputMessage, isTyping, isLoading, handleSendMessage, handleKeyPress } =
+    useCustomerServiceChat()
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -26,20 +24,6 @@ const CustomerServiceChat = () => {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
     }
   }, [messages, isTyping])
-
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return
-
-    await sendMessage(inputMessage)
-    setInputMessage("")
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
 
   const quickReplies = [
     "Jam operasional kantor desa",
