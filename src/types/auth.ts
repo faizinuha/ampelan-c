@@ -52,3 +52,26 @@ export interface UserNotification {
   created_at: string;
   notification?: Notification;
 }
+
+export interface AccountDeletionRequest {
+  id: string;
+  user_id: string;
+  profile_data: {
+    full_name: string;
+    email: string;
+    phone?: string;
+    address?: string;
+    rt_rw?: string;
+    occupation?: string;
+    role: string;
+    created_at: string;
+    avatar_url?: string;
+  };
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_notes?: string;
+  processed_by?: string;
+  processed_at?: string;
+  created_at: string;
+  updated_at: string;
+}

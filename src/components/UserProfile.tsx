@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Save, X, User, Phone, MapPin, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Profile } from '@/types/auth';
+import AvatarUpload from '@/components/AvatarUpload';
 
 const UserProfile = () => {
   const { user, profile, updateProfile } = useAuth();
@@ -41,8 +41,8 @@ const UserProfile = () => {
     setEditData({});
   };
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  const handleAvatarUpdate = async (url: string) => {
+    await updateProfile({ avatar_url: url });
   };
 
   return (
@@ -75,12 +75,11 @@ const UserProfile = () => {
       <CardContent className="space-y-6">
         {/* Avatar and basic info */}
         <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6">
-          <Avatar className="w-24 h-24">
-            <AvatarImage src={profile.avatar_url} alt={profile.full_name} />
-            <AvatarFallback className="text-lg bg-green-100 text-green-700">
-              {getInitials(profile.full_name)}
-            </AvatarFallback>
-          </Avatar>
+          <AvatarUpload
+            currentAvatar={profile.avatar_url}
+            userName={profile.full_name}
+            onAvatarUpdate={handleAvatarUpdate}
+          />
           <div className="text-center sm:text-left">
             <h3 className="text-xl font-semibold">{profile.full_name}</h3>
             <p className="text-gray-600">{user.email}</p>
