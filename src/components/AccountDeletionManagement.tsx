@@ -20,37 +20,16 @@ import { Trash2, Check, X, User, Mail, Phone, MapPin, Briefcase, Calendar } from
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
-interface DeletionRequest {
-  id: string;
-  user_id: string;
-  profile_data: {
-    full_name: string;
-    email: string;
-    phone?: string;
-    address?: string;
-    rt_rw?: string;
-    occupation?: string;
-    role: string;
-    created_at: string;
-    avatar_url?: string;
-  };
-  reason?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_notes?: string;
-  processed_by?: string;
-  processed_at?: string;
-  created_at: string;
-}
+import { AccountDeletionRequest } from '@/types/auth';
 
 const AccountDeletionManagement = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [requests, setRequests] = useState<DeletionRequest[]>([]);
+  const [requests, setRequests] = useState<AccountDeletionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string>('');
   const [adminNotes, setAdminNotes] = useState<string>('');
-  const [selectedRequest, setSelectedRequest] = useState<DeletionRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<AccountDeletionRequest | null>(null);
 
   useEffect(() => {
     fetchDeletionRequests();
@@ -64,7 +43,14 @@ const AccountDeletionManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+      
+      // Cast the data to proper type
+      const typedRequests = (data || []).map(item => ({
+        ...item,
+        profile_data: item.profile_data as AccountDeletionRequest['profile_data']
+      })) as AccountDeletionRequest[];
+      
+      setRequests(typedRequests);
     } catch (error) {
       console.error('Error fetching deletion requests:', error);
       toast({
