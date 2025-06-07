@@ -1,7 +1,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, Calendar, MapPin, Users } from 'lucide-react';
+import { Bell, Calendar, MapPin, Users, Target, Heart, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DocumentSubmissionForm from '@/components/DocumentSubmissionForm';
 import { useNews } from '@/hooks/useNews';
@@ -53,15 +53,15 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Hero Section dengan background yang lebih menarik */}
+      {/* Hero Section dengan background foto yang menarik */}
       <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-green-800 text-white py-20 overflow-hidden">
         <div className="absolute inset-0">
           <img 
-            src="https://images.unsplash.com/photo-1539650116574-75c0c6d73d0e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
-            alt="Beautiful Indonesian village landscape" 
-            className="w-full h-full object-cover opacity-25"
+            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            alt="Beautiful Indonesian village landscape with mountains" 
+            className="w-full h-full object-cover opacity-30"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-green-600/85 via-green-700/80 to-green-800/90"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-green-600/90 via-green-700/85 to-green-800/95"></div>
         </div>
         
         {/* Decorative elements */}
@@ -91,6 +91,77 @@ const Home = () => {
                 </Button>
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Visi Misi Pemuda Section */}
+      <section className="py-16 bg-gradient-to-r from-blue-50 to-green-50 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <img 
+            src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            alt="Youth background" 
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Visi & Misi Pemuda Desa Ampelan
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Bersama membangun desa dengan semangat inovasi dan kebersamaan
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Visi */}
+            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/90 backdrop-blur-sm">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-green-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <CardHeader className="relative text-center">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Target className="w-8 h-8 text-white" />
+                </div>
+                <CardTitle className="text-xl text-blue-600">Visi</CardTitle>
+              </CardHeader>
+              <CardContent className="relative text-center">
+                <p className="text-gray-700 leading-relaxed">
+                  Menjadi generasi pemuda yang inovatif, mandiri, dan berkarakter dalam membangun Desa Ampelan yang maju, sejahtera, dan berkelanjutan.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Misi 1 */}
+            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/90 backdrop-blur-sm">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <CardHeader className="relative text-center">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Heart className="w-8 h-8 text-white" />
+                </div>
+                <CardTitle className="text-xl text-green-600">Misi</CardTitle>
+              </CardHeader>
+              <CardContent className="relative text-center">
+                <p className="text-gray-700 leading-relaxed">
+                  Mengembangkan potensi pemuda melalui pendidikan, pelatihan, dan pemberdayaan ekonomi kreatif untuk meningkatkan kesejahteraan masyarakat.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Misi 2 */}
+            <Card className="relative overflow-hidden hover:shadow-xl transition-all duration-300 group bg-white/90 backdrop-blur-sm">
+              <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <CardHeader className="relative text-center">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <Zap className="w-8 h-8 text-white" />
+                </div>
+                <CardTitle className="text-xl text-orange-600">Aksi</CardTitle>
+              </CardHeader>
+              <CardContent className="relative text-center">
+                <p className="text-gray-700 leading-relaxed">
+                  Melestarikan budaya lokal sambil mengadopsi teknologi modern untuk menciptakan inovasi yang bermanfaat bagi kemajuan desa.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

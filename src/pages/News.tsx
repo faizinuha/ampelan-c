@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +10,6 @@ import { NewsPost } from '@/types/submissions';
 
 const News = () => {
   const [newsData, setNewsData] = useState<NewsPost[]>([]);
-  const [filteredNews, setFilteredNews] = useState<NewsPost[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
@@ -28,8 +26,8 @@ const News = () => {
     'Umum'
   ];
 
-  // Data fake untuk demo
-  const fakeNews = [
+  // Pre-load fake data for instant loading
+  const fakeNews = useMemo(() => [
     {
       id: 'fake-1',
       title: 'Musyawarah Desa Tentang Pembangunan Jalan',
@@ -65,47 +63,54 @@ const News = () => {
       is_published: true,
       created_at: '2025-06-08T16:45:00Z',
       updated_at: '2025-06-08T16:45:00Z'
+    },
+    {
+      id: 'fake-4',
+      title: 'Pelatihan Digital Marketing untuk UMKM',
+      excerpt: 'Workshop digital marketing gratis untuk pelaku UMKM desa dalam rangka meningkatkan penjualan online.',
+      content: 'Desa Ampelan mengadakan pelatihan digital marketing untuk para pelaku UMKM. Pelatihan ini bertujuan membantu masyarakat meningkatkan penjualan produk lokal melalui platform digital.',
+      category: 'Pembangunan',
+      image_url: 'https://images.unsplash.com/photo-1556761175-4b46a572b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      author_id: null,
+      is_published: true,
+      created_at: '2025-06-05T14:20:00Z',
+      updated_at: '2025-06-05T14:20:00Z'
+    },
+    {
+      id: 'fake-5',
+      title: 'Posyandu Balita Bulan Juni',
+      excerpt: 'Pelaksanaan posyandu balita dengan pemeriksaan kesehatan dan imunisasi gratis.',
+      content: 'Posyandu balita rutin bulan Juni akan dilaksanakan di 4 titik lokasi berbeda. Semua balita diharapkan hadir untuk mendapat pemeriksaan kesehatan dan imunisasi lengkap.',
+      category: 'Kesehatan',
+      image_url: 'https://images.unsplash.com/photo-1581060829591-4cc88f08b6ec?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      author_id: null,
+      is_published: true,
+      created_at: '2025-06-03T09:15:00Z',
+      updated_at: '2025-06-03T09:15:00Z'
+    },
+    {
+      id: 'fake-6',
+      title: 'Festival Budaya Desa Ampelan 2025',
+      excerpt: 'Perayaan festival budaya tahunan dengan berbagai pertunjukan seni tradisional dan modern.',
+      content: 'Festival Budaya Desa Ampelan 2025 akan menghadirkan pertunjukan tari tradisional, musik daerah, pameran kerajinan lokal, dan berbagai lomba menarik untuk semua usia.',
+      category: 'Budaya',
+      image_url: 'https://images.unsplash.com/photo-1549451371-64aa98a6f532?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      author_id: null,
+      is_published: true,
+      created_at: '2025-06-01T18:30:00Z',
+      updated_at: '2025-06-01T18:30:00Z'
     }
-  ];
+  ], []);
 
-  useEffect(() => {
-    fetchNews();
-  }, []);
-
-  useEffect(() => {
-    filterNews();
-  }, [newsData, searchTerm, selectedCategory]);
-
-  const fetchNews = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('news_posts')
-        .select('*')
-        .eq('is_published', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      
-      // Gabungkan data asli dengan data fake
-      const allNews = [...(data || []), ...fakeNews];
-      setNewsData(allNews);
-    } catch (error) {
-      console.error('Error fetching news:', error);
-      // Jika error, tampilkan hanya data fake
-      setNewsData(fakeNews);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filterNews = () => {
+  // Optimized filtering with useMemo
+  const filteredNews = useMemo(() => {
     let filtered = newsData;
 
     if (searchTerm) {
+      const search = searchTerm.toLowerCase();
       filtered = filtered.filter(news =>
-        news.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        news.excerpt.toLowerCase().includes(searchTerm.toLowerCase())
+        news.title.toLowerCase().includes(search) ||
+        news.excerpt.toLowerCase().includes(search)
       );
     }
 
@@ -113,7 +118,35 @@ const News = () => {
       filtered = filtered.filter(news => news.category === selectedCategory);
     }
 
-    setFilteredNews(filtered);
+    return filtered;
+  }, [newsData, searchTerm, selectedCategory]);
+
+  useEffect(() => {
+    // Set fake data immediately for instant loading
+    setNewsData(fakeNews);
+    setIsLoading(false);
+    
+    // Then try to fetch real data in background
+    fetchNewsInBackground();
+  }, [fakeNews]);
+
+  const fetchNewsInBackground = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('news_posts')
+        .select('*')
+        .eq('is_published', true)
+        .order('created_at', { ascending: false });
+
+      if (!error && data && data.length > 0) {
+        // Merge real data with fake data
+        const allNews = [...data, ...fakeNews];
+        setNewsData(allNews);
+      }
+    } catch (error) {
+      console.log('Background fetch failed, using cached data:', error);
+      // Keep using fake data if fetch fails
+    }
   };
 
   if (isLoading) {
@@ -181,7 +214,7 @@ const News = () => {
           </CardContent>
         </Card>
 
-        {/* News Grid */}
+        {/* News Grid - Optimized with better layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {filteredNews.map((news) => (
             <Card
@@ -193,6 +226,7 @@ const News = () => {
                   src={news.image_url || 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
                   alt={news.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 <div className="absolute top-4 left-4">
