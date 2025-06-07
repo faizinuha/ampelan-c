@@ -97,6 +97,11 @@ const NotificationPermission = () => {
         
         // Send test notification with mobile-specific options
         try {
+          // Trigger vibration on mobile if supported
+          if (isMobile && 'vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]);
+          }
+
           const notification = new Notification("Notifikasi Aktif! 🔔", {
             body: "Anda akan menerima notifikasi untuk berita dan pengumuman terbaru dari Desa Ampelan",
             icon: '/favicon.ico',
@@ -104,7 +109,6 @@ const NotificationPermission = () => {
             tag: 'test-notification',
             requireInteraction: isMobile, // Keep notification visible on mobile
             silent: false,
-            vibrate: isMobile ? [200, 100, 200] : undefined, // Vibration for mobile
           });
 
           // Auto close notification after 5 seconds on desktop

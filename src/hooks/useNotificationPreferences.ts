@@ -212,13 +212,17 @@ export const useNotificationPreferences = () => {
     }
 
     try {
+      // Trigger vibration on mobile if supported
+      if (isMobile() && 'vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+
       const notification = new Notification("Test Notifikasi Push 🔔", {
         body: "Ini adalah test notifikasi push dari Desa Ampelan",
         icon: '/favicon.ico',
         badge: '/favicon.ico',
         tag: 'test-push-notification',
         requireInteraction: isMobile(),
-        vibrate: isMobile() ? [200, 100, 200] : undefined,
       });
 
       notification.onclick = () => {
