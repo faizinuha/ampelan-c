@@ -1,14 +1,10 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  images: {
-    unoptimized: true,
-  },
-}
+  // next.config.mjs
+  import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
 
-export default nextConfig
+  /** @type {import('next').NextConfig} */
+  const nextConfig = {
+    // ... existing config
+    ...setupDevPlatform()
+  };
+
+  export default nextConfig;
