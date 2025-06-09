@@ -46,6 +46,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Auth state changed:", event, session?.user?.email)
 
       if (session?.user) {
+        // Set user immediately untuk UI yang lebih responsif
+        const tempUser = {
+          id: session.user.id,
+          email: session.user.email || "",
+          name: session.user.email?.split("@")[0] || "",
+          role: "user" as const,
+        }
+        setUser(tempUser)
+
+        // Kemudian load profile lengkap
         await loadUserProfile(session.user.id, session.user.email)
       } else {
         setUser(null)
@@ -113,13 +123,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (profileData) {
         console.log("Profile loaded:", profileData)
 
-        // Ensure role is properly typed
         const userRole =
           profileData.role === "admin" || profileData.role === "user"
             ? (profileData.role as "admin" | "user")
             : ("user" as const)
 
-        // Type-safe conversion from database response to Profile type
         const typedProfile: Profile = {
           id: profileData.id,
           full_name: profileData.full_name,
@@ -133,7 +141,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           updated_at: profileData.updated_at,
         }
 
-        // Get email from auth session if not provided
         let email = userEmail
         if (!email) {
           const {
@@ -142,6 +149,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           email = authUser?.email || ""
         }
 
+        // Update profile dan user secara bersamaan
         setProfile(typedProfile)
         setUser({
           id: profileData.id,
@@ -227,11 +235,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error(
           "Supabase 500 error, retrying without custom data:",
           error,
+        )(
+          ({ data, error } = await supabase.auth.signUp({
+            email,
+            password,
+          })),
         )
-        ;({ data, error } = await supabase.auth.signUp({
-          email,
-          password,
-        }))
       }
 
       if (error) {
