@@ -28,6 +28,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import { BookOpen, FileText, Home, LogOut, Menu, Settings, User, Calendar, MessageCircle } from "lucide-react"
 import NotificationCenter from "./NotificationCenter"
+import { supabase } from "@/lib/supabaseClient"
 
 const Navigation = () => {
   const { user, profile, logout, isLoading } = useAuth()
@@ -37,14 +38,29 @@ const Navigation = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
+  // Tambahkan immediate session check
+  const [hasSession, setHasSession] = useState(false)
+
+  useEffect(() => {
+    // Check immediate session untuk UI yang lebih responsif
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      setHasSession(!!session?.user)
+    }
+    checkSession()
+  }, [])
+
   // Debug logging untuk troubleshooting
   useEffect(() => {
     console.log("Navigation state:", {
       user: user ? { id: user.id, email: user.email, role: user.role } : null,
       profile: profile ? { id: profile.id, full_name: profile.full_name, role: profile.role } : null,
       isLoading,
+      hasSession,
     })
-  }, [user, profile, isLoading])
+  }, [user, profile, isLoading, hasSession])
 
   const handleLogout = () => {
     setShowLogoutConfirm(true)
@@ -112,7 +128,7 @@ const Navigation = () => {
   )
 
   // Cek apakah user sudah login dan profile sudah dimuat
-  const isAuthenticated = Boolean(user && profile)
+  const isAuthenticated = Boolean(user && profile) || (hasSession && !isLoading)
 
   return (
     <>
