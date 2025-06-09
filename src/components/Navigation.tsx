@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useAuth } from "@/contexts/AuthContext"
-import { BookOpen, FileText, Home, LogOut, Menu, Settings, User, Calendar, Loader2, MessageCircle } from "lucide-react"
+import { BookOpen, FileText, Home, LogOut, Menu, Settings, User, Calendar, MessageCircle } from "lucide-react"
 import NotificationCenter from "./NotificationCenter"
 
 const Navigation = () => {
@@ -64,6 +64,7 @@ const Navigation = () => {
   }
 
   const getInitials = (name: string) => {
+    if (!name) return "U"
     return name
       .split(" ")
       .map((word) => word.charAt(0))
@@ -110,29 +111,8 @@ const Navigation = () => {
     </Link>
   )
 
-  // Show loading state
-  if (isLoading) {
-    return (
-      <nav className="bg-white shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">DA</span>
-              </div>
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900">Desa Ampelan</h1>
-              </div>
-            </Link>
-            <div className="flex items-center space-x-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm text-gray-500">Memuat...</span>
-            </div>
-          </div>
-        </div>
-      </nav>
-    )
-  }
+  // Cek apakah user sudah login dan profile sudah dimuat
+  const isAuthenticated = Boolean(user && profile)
 
   return (
     <>
@@ -165,7 +145,7 @@ const Navigation = () => {
 
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-4">
-              {user && profile ? (
+              {isAuthenticated ? (
                 <>
                   <NotificationCenter />
 
@@ -175,7 +155,7 @@ const Navigation = () => {
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={profile?.avatar_url || ""} />
                           <AvatarFallback className="bg-green-600 text-white">
-                            {profile?.full_name ? getInitials(profile.full_name) : "U"}
+                            {getInitials(profile?.full_name || user?.name || "")}
                           </AvatarFallback>
                         </Avatar>
                       </Button>
@@ -183,10 +163,10 @@ const Navigation = () => {
                     <DropdownMenuContent className="w-56" align="end">
                       <div className="flex items-center justify-start gap-2 p-2">
                         <div className="flex flex-col space-y-1 leading-none">
-                          <p className="font-medium">{profile?.full_name || "Pengguna"}</p>
-                          <p className="w-[200px] truncate text-sm text-muted-foreground">{user.email}</p>
-                          <Badge variant={user.role === "admin" ? "default" : "secondary"} className="w-fit">
-                            {user.role === "admin" ? "Admin" : "Warga"}
+                          <p className="font-medium">{profile?.full_name || user?.name || "Pengguna"}</p>
+                          <p className="w-[200px] truncate text-sm text-muted-foreground">{user?.email}</p>
+                          <Badge variant={user?.role === "admin" ? "default" : "secondary"} className="w-fit">
+                            {user?.role === "admin" ? "Admin" : "Warga"}
                           </Badge>
                         </div>
                       </div>
@@ -197,7 +177,7 @@ const Navigation = () => {
                           Profil
                         </Link>
                       </DropdownMenuItem>
-                      {user.role === "admin" && (
+                      {user?.role === "admin" && (
                         <DropdownMenuItem asChild>
                           <Link to="/admin" className="flex items-center">
                             <Settings className="mr-2 h-4 w-4" />
@@ -231,14 +211,14 @@ const Navigation = () => {
 
             {/* Mobile Menu */}
             <div className="md:hidden flex items-center space-x-2">
-              {user && profile && (
+              {isAuthenticated && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={profile?.avatar_url || ""} />
                         <AvatarFallback className="bg-green-600 text-white text-sm">
-                          {profile?.full_name ? getInitials(profile.full_name) : "U"}
+                          {getInitials(profile?.full_name || user?.name || "")}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -246,10 +226,10 @@ const Navigation = () => {
                   <DropdownMenuContent className="w-56" align="end">
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium text-sm">{profile?.full_name || "Pengguna"}</p>
-                        <p className="w-[200px] truncate text-xs text-muted-foreground">{user.email}</p>
-                        <Badge variant={user.role === "admin" ? "default" : "secondary"} className="w-fit text-xs">
-                          {user.role === "admin" ? "Admin" : "Warga"}
+                        <p className="font-medium text-sm">{profile?.full_name || user?.name || "Pengguna"}</p>
+                        <p className="w-[200px] truncate text-xs text-muted-foreground">{user?.email}</p>
+                        <Badge variant={user?.role === "admin" ? "default" : "secondary"} className="w-fit text-xs">
+                          {user?.role === "admin" ? "Admin" : "Warga"}
                         </Badge>
                       </div>
                     </div>
@@ -260,7 +240,7 @@ const Navigation = () => {
                         Profil
                       </Link>
                     </DropdownMenuItem>
-                    {user.role === "admin" && (
+                    {user?.role === "admin" && (
                       <DropdownMenuItem asChild>
                         <Link to="/admin" className="flex items-center">
                           <Settings className="mr-2 h-4 w-4" />
@@ -308,7 +288,7 @@ const Navigation = () => {
                             <span>{item.label}</span>
                           </NavLink>
                         ))}
-                        {user && profile && (
+                        {isAuthenticated && (
                           <Button
                             variant="outline"
                             size="sm"
@@ -322,7 +302,7 @@ const Navigation = () => {
                       </nav>
                     </div>
 
-                    {!user || !profile ? (
+                    {!isAuthenticated && (
                       <div className="border-t pt-6 space-y-2">
                         <Link to="/login" onClick={() => setIsOpen(false)}>
                           <Button variant="outline" className="w-full">
@@ -333,7 +313,7 @@ const Navigation = () => {
                           <Button className="w-full bg-green-600 hover:bg-green-700">Daftar</Button>
                         </Link>
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 </SheetContent>
               </Sheet>
@@ -354,7 +334,7 @@ const Navigation = () => {
             <AlertDialogAction onClick={confirmLogout} disabled={isLoggingOut} className="bg-red-600 hover:bg-red-700">
               {isLoggingOut ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span className="mr-2">⏳</span>
                   Keluar...
                 </>
               ) : (
