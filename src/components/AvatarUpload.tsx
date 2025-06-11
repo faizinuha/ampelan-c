@@ -1,12 +1,11 @@
-
-import React, { useState, useRef, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Camera, Upload, X, Check } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { Camera, Check, Upload, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
 
 interface AvatarUploadProps {
   currentAvatar?: string | null;
@@ -15,7 +14,7 @@ interface AvatarUploadProps {
 }
 
 const AvatarUpload = ({ currentAvatar, userName, onAvatarUpdate }: AvatarUploadProps) => {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

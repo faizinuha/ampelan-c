@@ -1,14 +1,14 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useActivities } from '@/hooks/useActivities';
 import { ActivityHero } from '@/components/activities/ActivityHero';
 import { ActivityForm } from '@/components/activities/ActivityForm';
 import { ActivityCard } from '@/components/activities/ActivityCard';
 
 const Activities = () => {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const { activities, uploadActivity } = useActivities();
 
   return (

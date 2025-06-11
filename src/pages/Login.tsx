@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore'
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
@@ -14,7 +14,7 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, oauthLogin, isLoading, user } = useAuth();
+  const { login, oauthLogin, isLoading, user } = useAuthStore();
   const navigate = useNavigate();
   const { toast } = useToast();
 

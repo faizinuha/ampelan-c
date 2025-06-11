@@ -1,12 +1,11 @@
-
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { NotificationPreferences } from '@/types/notifications';
+import { useEffect, useState } from 'react';
 
 export const useNotificationPreferences = () => {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const { toast } = useToast();
   const [settings, setSettings] = useState<NotificationPreferences>({
     email_news: true,
@@ -18,8 +17,14 @@ export const useNotificationPreferences = () => {
 
   // Check if device is mobile
   const isMobile = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-           (navigator.maxTouchPoints && navigator.maxTouchPoints > 2 && /MacIntel/.test(navigator.platform));
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      ) ||
+      (navigator.maxTouchPoints &&
+        navigator.maxTouchPoints > 2 &&
+        /MacIntel/.test(navigator.platform))
+    );
   };
 
   useEffect(() => {
@@ -30,10 +35,10 @@ export const useNotificationPreferences = () => {
 
   const fetchNotificationSettings = async () => {
     if (!user) return;
-    
+
     try {
       console.log('Fetching notification settings for user:', user.id);
-      
+
       const { data, error } = await (supabase as any)
         .from('user_notification_preferences')
         .select('*')
@@ -62,19 +67,21 @@ export const useNotificationPreferences = () => {
     }
   };
 
-  const updateNotificationSettings = async (newSettings: NotificationPreferences) => {
+  const updateNotificationSettings = async (
+    newSettings: NotificationPreferences
+  ) => {
     if (!user) return;
 
     setIsLoading(true);
     try {
       console.log('Updating notification settings:', newSettings);
-      
+
       const { error } = await (supabase as any)
         .from('user_notification_preferences')
         .upsert({
           user_id: user.id,
           ...newSettings,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         });
 
       if (error) {
@@ -84,31 +91,34 @@ export const useNotificationPreferences = () => {
 
       setSettings(newSettings);
       console.log('Settings saved successfully');
-      
+
       toast({
-        title: "Berhasil!",
-        description: "Pengaturan notifikasi telah disimpan",
+        title: 'Berhasil!',
+        description: 'Pengaturan notifikasi telah disimpan',
       });
     } catch (error) {
       console.error('Error updating notification settings:', error);
       toast({
-        title: "Error",
-        description: "Gagal menyimpan pengaturan notifikasi",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Gagal menyimpan pengaturan notifikasi',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSettingChange = async (key: keyof NotificationPreferences, value: boolean) => {
+  const handleSettingChange = async (
+    key: keyof NotificationPreferences,
+    value: boolean
+  ) => {
     // Special handling for push notifications
     if (key === 'push_notifications' && value === true) {
       if (!('Notification' in window)) {
         toast({
-          title: "Tidak Didukung",
-          description: "Browser Anda tidak mendukung notifikasi push",
-          variant: "destructive",
+          title: 'Tidak Didukung',
+          description: 'Browser Anda tidak mendukung notifikasi push',
+          variant: 'destructive',
         });
         return;
       }
@@ -116,11 +126,11 @@ export const useNotificationPreferences = () => {
       // Check current permission
       if (Notification.permission === 'denied') {
         toast({
-          title: "Notifikasi Diblokir",
-          description: isMobile() 
-            ? "Buka pengaturan browser dan aktifkan notifikasi untuk situs ini"
-            : "Klik ikon gembok di address bar dan aktifkan notifikasi",
-          variant: "destructive",
+          title: 'Notifikasi Diblokir',
+          description: isMobile()
+            ? 'Buka pengaturan browser dan aktifkan notifikasi untuk situs ini'
+            : 'Klik ikon gembok di address bar dan aktifkan notifikasi',
+          variant: 'destructive',
         });
         return;
       }
@@ -131,18 +141,18 @@ export const useNotificationPreferences = () => {
           const permission = await Notification.requestPermission();
           if (permission !== 'granted') {
             toast({
-              title: "Izin Diperlukan",
-              description: "Notifikasi push memerlukan izin dari browser",
-              variant: "destructive",
+              title: 'Izin Diperlukan',
+              description: 'Notifikasi push memerlukan izin dari browser',
+              variant: 'destructive',
             });
             return;
           }
         } catch (error) {
           console.error('Error requesting notification permission:', error);
           toast({
-            title: "Error",
-            description: "Gagal meminta izin notifikasi. Silakan coba lagi",
-            variant: "destructive",
+            title: 'Error',
+            description: 'Gagal meminta izin notifikasi. Silakan coba lagi',
+            variant: 'destructive',
           });
           return;
         }
@@ -159,14 +169,15 @@ export const useNotificationPreferences = () => {
     setIsLoading(true);
     try {
       console.log('Sending test notification');
-      
+
       const { error } = await supabase.from('notifications').insert({
         title: 'Test Notifikasi Email',
-        message: 'Ini adalah test notifikasi email untuk memastikan sistem berfungsi dengan baik.',
+        message:
+          'Ini adalah test notifikasi email untuk memastikan sistem berfungsi dengan baik.',
         type: 'info',
         target_audience: 'user',
         created_by: null,
-        is_active: true
+        is_active: true,
       });
 
       if (error) {
@@ -177,15 +188,15 @@ export const useNotificationPreferences = () => {
       console.log('Test notification sent successfully');
 
       toast({
-        title: "Test Notifikasi Dikirim!",
-        description: "Silakan cek email Anda dalam beberapa menit",
+        title: 'Test Notifikasi Dikirim!',
+        description: 'Silakan cek email Anda dalam beberapa menit',
       });
     } catch (error) {
       console.error('Error sending test notification:', error);
       toast({
-        title: "Error",
-        description: "Gagal mengirim test notifikasi",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Gagal mengirim test notifikasi',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -195,18 +206,18 @@ export const useNotificationPreferences = () => {
   const testPushNotification = async () => {
     if (!('Notification' in window)) {
       toast({
-        title: "Tidak Didukung",
-        description: "Browser Anda tidak mendukung notifikasi push",
-        variant: "destructive",
+        title: 'Tidak Didukung',
+        description: 'Browser Anda tidak mendukung notifikasi push',
+        variant: 'destructive',
       });
       return;
     }
 
     if (Notification.permission !== 'granted') {
       toast({
-        title: "Izin Diperlukan",
-        description: "Aktifkan notifikasi push terlebih dahulu",
-        variant: "destructive",
+        title: 'Izin Diperlukan',
+        description: 'Aktifkan notifikasi push terlebih dahulu',
+        variant: 'destructive',
       });
       return;
     }
@@ -217,8 +228,8 @@ export const useNotificationPreferences = () => {
         navigator.vibrate([200, 100, 200]);
       }
 
-      const notification = new Notification("Test Notifikasi Push 🔔", {
-        body: "Ini adalah test notifikasi push dari Desa Ampelan",
+      const notification = new Notification('Test Notifikasi Push 🔔', {
+        body: 'Ini adalah test notifikasi push dari Desa Ampelan',
         icon: '/favicon.ico',
         badge: '/favicon.ico',
         tag: 'test-push-notification',
@@ -236,15 +247,15 @@ export const useNotificationPreferences = () => {
       }
 
       toast({
-        title: "Test Notifikasi Push Dikirim!",
-        description: "Periksa notifikasi yang muncul",
+        title: 'Test Notifikasi Push Dikirim!',
+        description: 'Periksa notifikasi yang muncul',
       });
     } catch (error) {
       console.error('Error sending push notification:', error);
       toast({
-        title: "Error",
-        description: "Gagal mengirim test notifikasi push",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Gagal mengirim test notifikasi push',
+        variant: 'destructive',
       });
     }
   };

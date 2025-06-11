@@ -1,31 +1,34 @@
-
-import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bot, User } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore';
 import type { Message } from '@/types/customerService';
+import { Bot, User } from 'lucide-react';
+import React from 'react';
 
 interface ChatMessageProps {
   message: Message;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
-  const { profile } = useAuth();
+  const { profile } = useAuthStore();
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('id-ID', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(dateString).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
     });
   };
 
   return (
     <div
-      className={`flex ${message.sender_type === 'user' ? 'justify-end' : 'justify-start'}`}
+      className={`flex ${
+        message.sender_type === 'user' ? 'justify-end' : 'justify-start'
+      }`}
     >
       <div
         className={`flex items-start space-x-2 max-w-[80%] ${
-          message.sender_type === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+          message.sender_type === 'user'
+            ? 'flex-row-reverse space-x-reverse'
+            : ''
         }`}
       >
         <Avatar className="w-8 h-8">
@@ -50,9 +53,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
               : 'bg-white text-gray-800 shadow border'
           }`}
         >
-          <div className="whitespace-pre-wrap text-sm">
-            {message.message}
-          </div>
+          <div className="whitespace-pre-wrap text-sm">{message.message}</div>
           <div
             className={`text-xs mt-1 ${
               message.sender_type === 'user' ? 'text-blue-100' : 'text-gray-500'

@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore'
 import { supabase } from '@/integrations/supabase/client';
 import { UserNotification } from '@/types/auth';
 import { Bell, X } from 'lucide-react';
@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useAuth();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     if (!user) return;

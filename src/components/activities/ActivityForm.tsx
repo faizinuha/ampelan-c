@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { Camera, Upload } from 'lucide-react';
 import type { Activity } from '@/types/activity';
 
@@ -14,7 +13,7 @@ interface ActivityFormProps {
 }
 
 export const ActivityForm: React.FC<ActivityFormProps> = ({ onUpload }) => {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',

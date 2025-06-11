@@ -17,12 +17,12 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Trash2, AlertTriangle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore'
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 const DeleteAccount = () => {
-  const { user, profile, logout } = useAuth();
+  const { user, profile, logout } = useAuthStore();
   const { toast } = useToast();
   const [reason, setReason] = useState('');
   const [confirmText, setConfirmText] = useState('');

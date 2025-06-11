@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,13 +16,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Trash2, Check, X, User, Mail, Phone, MapPin, Briefcase, Calendar } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AccountDeletionRequest } from '@/types/auth';
 
 const AccountDeletionManagement = () => {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const { toast } = useToast();
   const [requests, setRequests] = useState<AccountDeletionRequest[]>([]);
   const [loading, setLoading] = useState(true);

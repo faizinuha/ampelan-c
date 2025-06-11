@@ -1,20 +1,18 @@
-"use client"
-
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { Link, useNavigate, useLocation } from "react-router-dom"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+// Navigation.tsx - versi Zustand
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+} from '@/components/ui/dropdown-menu'
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,27 +22,20 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { useAuth } from "@/contexts/AuthContext"
-import { BookOpen, FileText, Home, LogOut, Menu, Settings, User, Calendar, MessageCircle } from "lucide-react"
-import NotificationCenter from "./NotificationCenter"
+} from '@/components/ui/alert-dialog'
+import { BookOpen, FileText, Home, LogOut, Menu, Settings, User, Calendar, MessageCircle } from 'lucide-react'
+import NotificationCenter from './NotificationCenter'
 
 const Navigation = () => {
-  const { user, profile, logout, isLoading } = useAuth()
+  const user = useAuthStore((s) => s.user)
+  const profile = useAuthStore((s) => s.profile)
+  const logout = useAuthStore((s) => s.logout)
+  const isLoading = useAuthStore((s) => s.isLoading)
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-
-  // Debug logging untuk troubleshooting
-  useEffect(() => {
-    console.log("Navigation state:", {
-      user: user ? { id: user.id, email: user.email, role: user.role } : null,
-      profile: profile ? { id: profile.id, full_name: profile.full_name, role: profile.role } : null,
-      isLoading,
-    })
-  }, [user, profile, isLoading])
 
   const handleLogout = () => {
     setShowLogoutConfirm(true)
@@ -54,9 +45,9 @@ const Navigation = () => {
     setIsLoggingOut(true)
     try {
       await logout()
-      navigate("/", { replace: true })
+      navigate('/')
     } catch (error) {
-      console.error("Logout error:", error)
+      console.error('Logout error:', error)
     } finally {
       setIsLoggingOut(false)
       setShowLogoutConfirm(false)
@@ -64,29 +55,28 @@ const Navigation = () => {
   }
 
   const getInitials = (name: string) => {
-    if (!name) return "U"
+    if (!name) return 'U'
     return name
-      .split(" ")
+      .split(' ')
       .map((word) => word.charAt(0))
-      .join("")
+      .join('')
       .toUpperCase()
       .slice(0, 2)
   }
 
   const isActive = (path: string) => location.pathname === path
 
-  // Navigation items
   const navItems = [
-    { path: "/", label: "Beranda", icon: Home },
-    { path: "/news", label: "Berita", icon: BookOpen },
-    { path: "/activities", label: "Kegiatan", icon: Calendar },
-    { path: "/customer-service", label: "Customer Service", icon: MessageCircle },
+    { path: '/', label: 'Beranda', icon: Home },
+    { path: '/news', label: 'Berita', icon: BookOpen },
+    { path: '/activities', label: 'Kegiatan', icon: Calendar },
+    { path: '/customer-service', label: 'Customer Service', icon: MessageCircle },
   ]
 
   const NavLink = ({
     to,
     children,
-    className = "",
+    className = '',
     mobile = false,
   }: {
     to: string
@@ -99,11 +89,11 @@ const Navigation = () => {
       className={`${className} ${
         isActive(to)
           ? mobile
-            ? "bg-green-100 text-green-700 font-semibold"
-            : "text-green-600 border-b-2 border-green-600"
+            ? 'bg-green-100 text-green-700 font-semibold'
+            : 'text-green-600 border-b-2 border-green-600'
           : mobile
-            ? "text-gray-700 hover:bg-gray-100"
-            : "text-gray-700 hover:text-green-600"
+            ? 'text-gray-700 hover:bg-gray-100'
+            : 'text-gray-700 hover:text-green-600'
       } transition-colors duration-200`}
       onClick={() => setIsOpen(false)}
     >
@@ -111,8 +101,10 @@ const Navigation = () => {
     </Link>
   )
 
-  // Cek apakah user sudah login dan profile sudah dimuat
   const isAuthenticated = Boolean(user && profile)
+
+  // Cek apakah user sudah login dan profile sudah dimuat
+  // const isAuthenticated = Boolean(user && profile)
 
   return (
     <>
@@ -155,7 +147,7 @@ const Navigation = () => {
                         <Avatar className="h-10 w-10">
                           <AvatarImage src={profile?.avatar_url || ""} />
                           <AvatarFallback className="bg-green-600 text-white">
-                            {getInitials(profile?.full_name || user?.name || "")}
+                            {getInitials(profile?.full_name || user?.email || "")}
                           </AvatarFallback>
                         </Avatar>
                       </Button>
@@ -163,7 +155,7 @@ const Navigation = () => {
                     <DropdownMenuContent className="w-56" align="end">
                       <div className="flex items-center justify-start gap-2 p-2">
                         <div className="flex flex-col space-y-1 leading-none">
-                          <p className="font-medium">{profile?.full_name || user?.name || "Pengguna"}</p>
+                          <p className="font-medium">{profile?.full_name || user?.email || "Pengguna"}</p>
                           <p className="w-[200px] truncate text-sm text-muted-foreground">{user?.email}</p>
                           <Badge variant={user?.role === "admin" ? "default" : "secondary"} className="w-fit">
                             {user?.role === "admin" ? "Admin" : "Warga"}
@@ -218,7 +210,7 @@ const Navigation = () => {
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={profile?.avatar_url || ""} />
                         <AvatarFallback className="bg-green-600 text-white text-sm">
-                          {getInitials(profile?.full_name || user?.name || "")}
+                          {getInitials(profile?.full_name || user?.email || "")}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -226,7 +218,7 @@ const Navigation = () => {
                   <DropdownMenuContent className="w-56" align="end">
                     <div className="flex items-center justify-start gap-2 p-2">
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium text-sm">{profile?.full_name || user?.name || "Pengguna"}</p>
+                        <p className="font-medium text-sm">{profile?.full_name || user?.email || "Pengguna"}</p>
                         <p className="w-[200px] truncate text-xs text-muted-foreground">{user?.email}</p>
                         <Badge variant={user?.role === "admin" ? "default" : "secondary"} className="w-fit text-xs">
                           {user?.role === "admin" ? "Admin" : "Warga"}

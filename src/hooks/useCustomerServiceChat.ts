@@ -1,12 +1,11 @@
-
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
-import type { Message, DatabaseMessage } from '@/types/customerService';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/stores/useAuthStore';
+import type { DatabaseMessage, Message } from '@/types/customerService';
+import { useEffect, useState } from 'react';
 
 export const useCustomerServiceChat = () => {
-  const { user, profile } = useAuth();
+  const { user, profile } = useAuthStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -35,21 +34,23 @@ export const useCustomerServiceChat = () => {
       if (error) {
         console.error('Error loading chat history:', error);
         toast({
-          title: "Error",
-          description: "Gagal memuat riwayat chat",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Gagal memuat riwayat chat',
+          variant: 'destructive',
         });
         return;
       }
 
       if (data) {
-        const typedMessages: Message[] = data.map((dbMessage: DatabaseMessage) => ({
-          id: dbMessage.id,
-          message: dbMessage.message,
-          sender_type: dbMessage.sender_type as 'user' | 'agent' | 'bot',
-          created_at: dbMessage.created_at,
-          user_id: dbMessage.user_id
-        }));
+        const typedMessages: Message[] = data.map(
+          (dbMessage: DatabaseMessage) => ({
+            id: dbMessage.id,
+            message: dbMessage.message,
+            sender_type: dbMessage.sender_type as 'user' | 'agent' | 'bot',
+            created_at: dbMessage.created_at,
+            user_id: dbMessage.user_id,
+          })
+        );
         setMessages(typedMessages);
       }
     } catch (error) {
@@ -69,7 +70,11 @@ export const useCustomerServiceChat = () => {
       .limit(1);
 
     if (!existingMessages || existingMessages.length === 0) {
-      await sendBotMessage(`Selamat datang di Customer Service Desa Ampelan! 👋\n\n${user ? `Halo, ${profile?.full_name || user.name}!` : 'Halo!'} Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`);
+      await sendBotMessage(
+        `Selamat datang di Customer Service Desa Ampelan! 👋\n\n${
+          user ? `Halo, ${profile?.full_name || 'Pengguna'}!` : 'Halo!'
+        } Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`
+      );
     }
   };
 
@@ -78,7 +83,7 @@ export const useCustomerServiceChat = () => {
       id: '1',
       message: `Selamat datang di Customer Service Desa Ampelan! 👋\n\nHalo! Saya adalah asisten virtual yang siap membantu Anda.\n\nAnda bisa bertanya tentang:\n• Layanan administrasi desa\n• Lokasi fasilitas umum\n• Kontak tukang/jasa\n• Kegiatan masyarakat\n• Informasi umum lainnya\n\nSilakan ketik pertanyaan Anda!`,
       sender_type: 'bot',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
     setMessages([welcomeMessage]);
     setIsLoading(false);
@@ -94,8 +99,8 @@ export const useCustomerServiceChat = () => {
           {
             user_id: user.id,
             message: message,
-            sender_type: 'bot'
-          }
+            sender_type: 'bot',
+          },
         ])
         .select()
         .single();
@@ -111,9 +116,9 @@ export const useCustomerServiceChat = () => {
           message: data.message,
           sender_type: data.sender_type as 'user' | 'agent' | 'bot',
           created_at: data.created_at,
-          user_id: data.user_id
+          user_id: data.user_id,
         };
-        setMessages(prev => [...prev, typedMessage]);
+        setMessages((prev) => [...prev, typedMessage]);
       }
     } catch (error) {
       console.error('Error in sendBotMessage:', error);
@@ -125,9 +130,9 @@ export const useCustomerServiceChat = () => {
 
     if (!user) {
       toast({
-        title: "Info",
-        description: "Silakan login terlebih dahulu untuk menggunakan chat",
-        variant: "default",
+        title: 'Info',
+        description: 'Silakan login terlebih dahulu untuk menggunakan chat',
+        variant: 'default',
       });
       return;
     }
@@ -142,8 +147,8 @@ export const useCustomerServiceChat = () => {
           {
             user_id: user.id,
             message: messageText,
-            sender_type: 'user'
-          }
+            sender_type: 'user',
+          },
         ])
         .select()
         .single();
@@ -151,9 +156,9 @@ export const useCustomerServiceChat = () => {
       if (userError) {
         console.error('Error saving user message:', userError);
         toast({
-          title: "Error",
-          description: "Gagal mengirim pesan",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Gagal mengirim pesan',
+          variant: 'destructive',
         });
         return;
       }
@@ -164,24 +169,25 @@ export const useCustomerServiceChat = () => {
           message: userMessage.message,
           sender_type: userMessage.sender_type as 'user' | 'agent' | 'bot',
           created_at: userMessage.created_at,
-          user_id: userMessage.user_id
+          user_id: userMessage.user_id,
         };
-        setMessages(prev => [...prev, typedUserMessage]);
+        setMessages((prev) => [...prev, typedUserMessage]);
       }
 
       setIsTyping(true);
 
       setTimeout(async () => {
-        const botResponse = 'Terima kasih atas pertanyaan Anda. Tim customer service kami akan segera membantu Anda. Untuk informasi lebih detail, silakan hubungi kantor desa di (0271) 123456.';
-        
+        const botResponse =
+          'Terima kasih atas pertanyaan Anda. Tim customer service kami akan segera membantu Anda. Untuk informasi lebih detail, silakan hubungi kantor desa di (0271) 123456.';
+
         const { data: botMessage, error: botError } = await supabase
           .from('customer_service_chats')
           .insert([
             {
               user_id: user.id,
               message: botResponse,
-              sender_type: 'bot'
-            }
+              sender_type: 'bot',
+            },
           ])
           .select()
           .single();
@@ -194,20 +200,19 @@ export const useCustomerServiceChat = () => {
             message: botMessage.message,
             sender_type: botMessage.sender_type as 'user' | 'agent' | 'bot',
             created_at: botMessage.created_at,
-            user_id: botMessage.user_id
+            user_id: botMessage.user_id,
           };
-          setMessages(prev => [...prev, typedBotMessage]);
+          setMessages((prev) => [...prev, typedBotMessage]);
         }
 
         setIsTyping(false);
       }, 2000);
-
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
       toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat mengirim pesan",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Terjadi kesalahan saat mengirim pesan',
+        variant: 'destructive',
       });
     }
   };
@@ -226,6 +231,6 @@ export const useCustomerServiceChat = () => {
     isTyping,
     isLoading,
     handleSendMessage,
-    handleKeyPress
+    handleKeyPress,
   };
 };

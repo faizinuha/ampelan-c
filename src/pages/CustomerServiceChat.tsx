@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { ArrowLeft, Bot, Phone, Mail, Clock } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useCustomerServiceChat } from "@/hooks/useCustomerServiceChat"
 import { ChatHeader } from "@/components/customerService/ChatHeader"
 import { ChatMessage } from "@/components/customerService/ChatMessage"
@@ -14,7 +14,7 @@ import { ChatInput } from "@/components/customerService/ChatInput"
 import { TypingIndicator } from "@/components/customerService/TypingIndicator"
 
 const CustomerServiceChat = () => {
-  const { user, profile } = useAuth()
+  const { user, profile } = useAuthStore()
   const { messages, inputMessage, setInputMessage, isTyping, isLoading, handleSendMessage, handleKeyPress } =
     useCustomerServiceChat()
   const scrollAreaRef = useRef<HTMLDivElement>(null)

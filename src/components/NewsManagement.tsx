@@ -1,22 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, Eye, Upload } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { NewsPost } from '@/types/submissions';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { NewsPost } from '@/types/submissions';
+import { Edit, Eye, Plus, Trash2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 const NewsManagement = () => {
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const { toast } = useToast();
   const [newsData, setNewsData] = useState<NewsPost[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -29,7 +48,7 @@ const NewsManagement = () => {
     content: '',
     category: '',
     image_url: '',
-    is_published: true
+    is_published: true,
   });
 
   const categories = [
@@ -41,7 +60,7 @@ const NewsManagement = () => {
     'Pendidikan',
     'Olahraga',
     'Budaya',
-    'Umum'
+    'Umum',
   ];
 
   useEffect(() => {
@@ -60,9 +79,9 @@ const NewsManagement = () => {
     } catch (error) {
       console.error('Error fetching news:', error);
       toast({
-        title: "Error",
-        description: "Gagal memuat berita",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Gagal memuat berita',
+        variant: 'destructive',
       });
     }
   };
@@ -105,26 +124,26 @@ const NewsManagement = () => {
 
   const sendNotification = async (title: string, message: string) => {
     // Check if browser supports notifications
-    if (!("Notification" in window)) {
-      console.log("Browser tidak mendukung notifikasi");
+    if (!('Notification' in window)) {
+      console.log('Browser tidak mendukung notifikasi');
       return;
     }
 
     // Request permission if needed
-    if (Notification.permission === "default") {
+    if (Notification.permission === 'default') {
       const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        console.log("Izin notifikasi ditolak");
+      if (permission !== 'granted') {
+        console.log('Izin notifikasi ditolak');
         return;
       }
     }
 
     // Send notification if permission granted
-    if (Notification.permission === "granted") {
+    if (Notification.permission === 'granted') {
       new Notification(title, {
         body: message,
         icon: '/favicon.ico',
-        badge: '/favicon.ico'
+        badge: '/favicon.ico',
       });
     }
   };
@@ -132,33 +151,33 @@ const NewsManagement = () => {
   const createNews = async () => {
     try {
       let imageUrl = newNews.image_url;
-      
+
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
 
-      const { error } = await supabase
-        .from('news_posts')
-        .insert([{
+      const { error } = await supabase.from('news_posts').insert([
+        {
           title: newNews.title,
           excerpt: newNews.excerpt,
           content: newNews.content,
           category: newNews.category,
           image_url: imageUrl,
           is_published: newNews.is_published,
-          author_id: user?.id
-        }]);
+          author_id: user?.id,
+        },
+      ]);
 
       if (error) throw error;
 
       toast({
-        title: "Berhasil!",
-        description: "Berita berhasil dibuat",
+        title: 'Berhasil!',
+        description: 'Berita berhasil dibuat',
       });
 
       // Send web push notification
       await sendNotification(
-        "Berita Baru Diterbitkan!",
+        'Berita Baru Diterbitkan!',
         `${newNews.title} - ${newNews.excerpt.substring(0, 50)}...`
       );
 
@@ -167,19 +186,19 @@ const NewsManagement = () => {
     } catch (error) {
       console.error('Error creating news:', error);
       toast({
-        title: "Error",
-        description: "Gagal membuat berita. Silakan coba lagi.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Gagal membuat berita. Silakan coba lagi.',
+        variant: 'destructive',
       });
     }
   };
 
   const updateNews = async () => {
     if (!editingNews) return;
-    
+
     try {
       let imageUrl = newNews.image_url;
-      
+
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
       }
@@ -193,15 +212,15 @@ const NewsManagement = () => {
           category: newNews.category,
           image_url: imageUrl,
           is_published: newNews.is_published,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', editingNews.id);
 
       if (error) throw error;
 
       toast({
-        title: "Berhasil!",
-        description: "Berita berhasil diperbarui",
+        title: 'Berhasil!',
+        description: 'Berita berhasil diperbarui',
       });
 
       fetchNews();
@@ -209,9 +228,9 @@ const NewsManagement = () => {
     } catch (error) {
       console.error('Error updating news:', error);
       toast({
-        title: "Error",
-        description: "Gagal memperbarui berita",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Gagal memperbarui berita',
+        variant: 'destructive',
       });
     }
   };
@@ -226,17 +245,17 @@ const NewsManagement = () => {
       if (error) throw error;
 
       toast({
-        title: "Berhasil!",
-        description: "Berita berhasil dihapus",
+        title: 'Berhasil!',
+        description: 'Berita berhasil dihapus',
       });
 
       fetchNews();
     } catch (error) {
       console.error('Error deleting news:', error);
       toast({
-        title: "Error",
-        description: "Gagal menghapus berita",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Gagal menghapus berita',
+        variant: 'destructive',
       });
     }
   };
@@ -251,17 +270,19 @@ const NewsManagement = () => {
       if (error) throw error;
 
       toast({
-        title: "Berhasil!",
-        description: `Berita berhasil ${!news.is_published ? 'dipublikasikan' : 'disembunyikan'}`,
+        title: 'Berhasil!',
+        description: `Berita berhasil ${
+          !news.is_published ? 'dipublikasikan' : 'disembunyikan'
+        }`,
       });
 
       fetchNews();
     } catch (error) {
       console.error('Error toggling publish status:', error);
       toast({
-        title: "Error",
-        description: "Gagal mengubah status publikasi",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Gagal mengubah status publikasi',
+        variant: 'destructive',
       });
     }
   };
@@ -273,7 +294,7 @@ const NewsManagement = () => {
       content: '',
       category: '',
       image_url: '',
-      is_published: true
+      is_published: true,
     });
     setEditingNews(null);
     setImageFile(null);
@@ -289,7 +310,7 @@ const NewsManagement = () => {
       content: news.content,
       category: news.category,
       image_url: news.image_url || '',
-      is_published: news.is_published
+      is_published: news.is_published,
     });
     setImagePreview(news.image_url || '');
     setIsDialogOpen(true);
@@ -299,7 +320,9 @@ const NewsManagement = () => {
     <Card className="bg-white/80 backdrop-blur-sm shadow-xl">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-2xl font-bold text-gray-800">Kelola Berita & Kegiatan</CardTitle>
+          <CardTitle className="text-2xl font-bold text-gray-800">
+            Kelola Berita & Kegiatan
+          </CardTitle>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700">
@@ -319,14 +342,21 @@ const NewsManagement = () => {
                   <Input
                     id="title"
                     value={newNews.title}
-                    onChange={(e) => setNewNews({ ...newNews, title: e.target.value })}
+                    onChange={(e) =>
+                      setNewNews({ ...newNews, title: e.target.value })
+                    }
                     placeholder="Masukkan judul berita..."
                   />
                 </div>
 
                 <div>
                   <Label htmlFor="category">Kategori</Label>
-                  <Select onValueChange={(value) => setNewNews({ ...newNews, category: value })} value={newNews.category}>
+                  <Select
+                    onValueChange={(value) =>
+                      setNewNews({ ...newNews, category: value })
+                    }
+                    value={newNews.category}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih kategori" />
                     </SelectTrigger>
@@ -345,7 +375,9 @@ const NewsManagement = () => {
                   <Textarea
                     id="excerpt"
                     value={newNews.excerpt}
-                    onChange={(e) => setNewNews({ ...newNews, excerpt: e.target.value })}
+                    onChange={(e) =>
+                      setNewNews({ ...newNews, excerpt: e.target.value })
+                    }
                     placeholder="Masukkan ringkasan berita..."
                     rows={3}
                   />
@@ -356,7 +388,9 @@ const NewsManagement = () => {
                   <Textarea
                     id="content"
                     value={newNews.content}
-                    onChange={(e) => setNewNews({ ...newNews, content: e.target.value })}
+                    onChange={(e) =>
+                      setNewNews({ ...newNews, content: e.target.value })
+                    }
                     placeholder="Masukkan konten lengkap berita..."
                     rows={6}
                   />
@@ -398,13 +432,18 @@ const NewsManagement = () => {
                   <Switch
                     id="published"
                     checked={newNews.is_published}
-                    onCheckedChange={(checked) => setNewNews({ ...newNews, is_published: checked })}
+                    onCheckedChange={(checked) =>
+                      setNewNews({ ...newNews, is_published: checked })
+                    }
                   />
                   <Label htmlFor="published">Publikasikan</Label>
                 </div>
 
                 <div className="flex gap-2 pt-4">
-                  <Button onClick={editingNews ? updateNews : createNews} className="bg-green-600 hover:bg-green-700">
+                  <Button
+                    onClick={editingNews ? updateNews : createNews}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
                     {editingNews ? 'Perbarui' : 'Simpan'}
                   </Button>
                   <Button variant="outline" onClick={resetForm}>
@@ -439,10 +478,16 @@ const NewsManagement = () => {
                     {news.is_published ? 'Dipublikasikan' : 'Draft'}
                   </Badge>
                 </TableCell>
-                <TableCell>{new Date(news.created_at).toLocaleDateString('id-ID')}</TableCell>
+                <TableCell>
+                  {new Date(news.created_at).toLocaleDateString('id-ID')}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-2 justify-end">
-                    <Button variant="ghost" size="sm" onClick={() => startEdit(news)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEdit(news)}
+                    >
                       <Edit className="w-4 h-4" />
                     </Button>
                     <Button

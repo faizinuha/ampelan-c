@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '@/types/auth';
@@ -20,7 +20,7 @@ import { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 
 const Admin = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading } = useAuthStore();
   const { toast } = useToast();
   const [stats, setStats] = useState({
     totalUsers: 0,

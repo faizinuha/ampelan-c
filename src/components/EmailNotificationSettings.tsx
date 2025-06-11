@@ -1,20 +1,18 @@
-
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 import NotificationSwitch from '@/components/notifications/NotificationSwitch';
 import TestNotificationSection from '@/components/notifications/TestNotificationSection';
-import { Mail, Bell, Settings } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { Bell, Mail, Settings } from 'lucide-react';
 
 const EmailNotificationSettings = () => {
-  const { user } = useAuth();
-  const { 
-    settings, 
-    isLoading, 
-    handleSettingChange, 
+  const { user } = useAuthStore();
+  const {
+    settings,
+    isLoading,
+    handleSettingChange,
     testEmailNotification,
-    testPushNotification 
+    testPushNotification,
   } = useNotificationPreferences();
 
   if (!user) return null;
@@ -34,7 +32,9 @@ const EmailNotificationSettings = () => {
             title="Notifikasi Email Berita"
             description="Terima email saat ada berita baru"
             checked={settings.email_news}
-            onCheckedChange={(checked) => handleSettingChange('email_news', checked)}
+            onCheckedChange={(checked) =>
+              handleSettingChange('email_news', checked)
+            }
             disabled={isLoading}
           />
 
@@ -43,7 +43,9 @@ const EmailNotificationSettings = () => {
             title="Notifikasi Email Kegiatan"
             description="Terima email saat ada kegiatan baru"
             checked={settings.email_activities}
-            onCheckedChange={(checked) => handleSettingChange('email_activities', checked)}
+            onCheckedChange={(checked) =>
+              handleSettingChange('email_activities', checked)
+            }
             disabled={isLoading}
           />
 
@@ -52,7 +54,9 @@ const EmailNotificationSettings = () => {
             title="Notifikasi Email Pengumuman"
             description="Terima email untuk pengumuman penting"
             checked={settings.email_announcements}
-            onCheckedChange={(checked) => handleSettingChange('email_announcements', checked)}
+            onCheckedChange={(checked) =>
+              handleSettingChange('email_announcements', checked)
+            }
             disabled={isLoading}
           />
 
@@ -61,7 +65,9 @@ const EmailNotificationSettings = () => {
             title="Notifikasi Push Browser"
             description="Terima notifikasi langsung di browser"
             checked={settings.push_notifications}
-            onCheckedChange={(checked) => handleSettingChange('push_notifications', checked)}
+            onCheckedChange={(checked) =>
+              handleSettingChange('push_notifications', checked)
+            }
             disabled={isLoading}
           />
         </div>

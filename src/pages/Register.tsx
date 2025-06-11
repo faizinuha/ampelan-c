@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Lock, Mail, User, UserPlus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -10,13 +10,13 @@ import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    full_name: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, isLoading, user } = useAuth();
+  const { register, isLoading, user } = useAuthStore();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -36,7 +36,7 @@ const Register = () => {
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) {
+    if (!formData.full_name.trim()) {
       toast({
         title: 'Error',
         description: 'Nama lengkap wajib diisi',
@@ -115,12 +115,12 @@ const Register = () => {
       const success = await register(
         formData.email,
         formData.password,
-        formData.name
+        formData.full_name
       );
 
       if (success) {
         setFormData({
-          name: '',
+          full_name: '',
           email: '',
           password: '',
           confirmPassword: '',
@@ -168,7 +168,7 @@ const Register = () => {
                   id="name"
                   name="name"
                   type="text"
-                  value={formData.name}
+                  value={formData.full_name}
                   onChange={handleChange}
                   placeholder="Masukkan nama lengkap Anda"
                   className="mt-1"
