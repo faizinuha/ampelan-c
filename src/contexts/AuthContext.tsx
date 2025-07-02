@@ -17,17 +17,49 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    let isInitialized = false
+    let mounted = true
 
-    // Set up auth state listener FIRST
+    const initializeAuth = async () => {
+      try {
+        // Get current session first
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (error) {
+          console.error("Error getting session:", error)
+          if (mounted) {
+            setIsLoading(false)
+          }
+          return
+        }
+
+        if (session?.user) {
+          console.log("Session found on init:", session.user.email)
+          await loadUserProfile(session.user.id, session.user.email)
+        } else {
+          console.log("No session found on init")
+        }
+        
+        if (mounted) {
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error)
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    // Set up auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.email)
 
-      // Only handle auth state changes after initialization
-      if (!isInitialized && event === 'INITIAL_SESSION') {
-        isInitialized = true
+      if (!mounted) return
+
+      // Skip initial session event as we handle it above
+      if (event === 'INITIAL_SESSION') {
         return
       }
 
@@ -42,31 +74,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     })
 
-    // THEN check for existing session
-    const initializeAuth = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        if (session?.user) {
-          console.log("Session found on init:", session.user.email)
-          setIsLoading(true)
-          await loadUserProfile(session.user.id, session.user.email)
-        } else {
-          console.log("No session found on init")
-        }
-      } catch (error) {
-        console.error("Error getting session:", error)
-      } finally {
-        setIsLoading(false)
-        isInitialized = true
-      }
-    }
-
+    // Initialize auth
     initializeAuth()
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const loadUserProfile = async (userId: string, userEmail?: string) => {
