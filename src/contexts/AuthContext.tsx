@@ -23,6 +23,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
+        console.log("Initializing auth state...")
+        
+        // Get current session
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -60,17 +63,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!mounted) return
 
       if (session?.user) {
+        console.log("User authenticated, loading profile...")
         setIsLoading(true)
         await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
         setIsLoading(false)
       } else {
+        console.log("User signed out, clearing state...")
         setUser(null)
         setProfile(null)
         setIsLoading(false)
       }
     })
 
-    // Initialize auth
+    // Initialize auth after setting up listener
     initializeAuth()
 
     return () => {

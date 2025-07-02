@@ -18,13 +18,14 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already logged in
+  // Redirect if already logged in - but wait for auth loading to complete
   useEffect(() => {
-    if (user) {
+    // Only redirect if we're not loading and user is confirmed to be logged in
+    if (!isLoading && user) {
       console.log('User already logged in, redirecting to home');
       navigate('/', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, isLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +85,18 @@ const Login = () => {
   };
 
   const isDisabled = isLoading || isSubmitting;
+
+  // Show loading state during auth initialization
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
