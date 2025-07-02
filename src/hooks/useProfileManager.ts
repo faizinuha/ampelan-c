@@ -8,7 +8,7 @@ export const useProfileManager = () => {
 
   const loadUserProfile = async (
     userId: string, 
-    userEmail?: string,
+    userEmail: string,
     setProfile: (profile: Profile | null) => void,
     setUser: (user: User | null) => void
   ) => {
@@ -26,20 +26,21 @@ export const useProfileManager = () => {
           console.log("Profile not found, creating new profile")
 
           // Get user email from auth if not provided
-          if (!userEmail) {
+          let email = userEmail
+          if (!email) {
             const {
               data: { user: authUser },
             } = await supabase.auth.getUser()
-            userEmail = authUser?.email
+            email = authUser?.email || ""
           }
 
-          if (userEmail) {
+          if (email) {
             const { data: newProfile, error: createError } = await supabase
               .from("profiles")
               .insert([
                 {
                   id: userId,
-                  full_name: userEmail.split("@")[0], // Use email prefix as default name
+                  full_name: email.split("@")[0], // Use email prefix as default name
                   role: "user",
                 },
               ])

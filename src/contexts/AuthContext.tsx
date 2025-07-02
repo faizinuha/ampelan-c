@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        // Get current session first
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -36,7 +35,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (session?.user) {
           console.log("Session found on init:", session.user.email)
-          await loadUserProfile(session.user.id, session.user.email, setProfile, setUser)
+          await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
         } else {
           console.log("No session found on init")
         }
@@ -60,14 +59,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!mounted) return
 
-      // Skip initial session event as we handle it above
-      if (event === 'INITIAL_SESSION') {
-        return
-      }
-
       if (session?.user) {
         setIsLoading(true)
-        await loadUserProfile(session.user.id, session.user.email, setProfile, setUser)
+        await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
         setIsLoading(false)
       } else {
         setUser(null)
