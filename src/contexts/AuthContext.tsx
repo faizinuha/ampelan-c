@@ -17,20 +17,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate()
 
   useEffect(() => {
+    let isInitialized = false
+
     // Set up auth state listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth state changed:", event, session?.user?.email)
 
+      // Only handle auth state changes after initialization
+      if (!isInitialized && event === 'INITIAL_SESSION') {
+        isInitialized = true
+        return
+      }
+
       if (session?.user) {
         setIsLoading(true)
         await loadUserProfile(session.user.id, session.user.email)
+        setIsLoading(false)
       } else {
         setUser(null)
         setProfile(null)
+        setIsLoading(false)
       }
-      setIsLoading(false)
     })
 
     // THEN check for existing session
@@ -42,6 +51,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (session?.user) {
           console.log("Session found on init:", session.user.email)
+          setIsLoading(true)
           await loadUserProfile(session.user.id, session.user.email)
         } else {
           console.log("No session found on init")
@@ -50,6 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error("Error getting session:", error)
       } finally {
         setIsLoading(false)
+        isInitialized = true
       }
     }
 
