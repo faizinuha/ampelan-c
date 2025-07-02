@@ -8,6 +8,7 @@ interface ChatInputProps {
   inputMessage: string;
   setInputMessage: (value: string) => void;
   isTyping: boolean;
+  isLoading?: boolean;
   onSendMessage: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
 }
