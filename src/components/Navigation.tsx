@@ -44,7 +44,7 @@ const Navigation = () => {
   }
 
   // Wait for auth to initialize before determining authentication status
-  const isAuthenticated = !isLoading && user && profile
+  const isAuthenticated = !isLoading && !!user && !!profile
 
   return (
     <>
