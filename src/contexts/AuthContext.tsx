@@ -3,7 +3,7 @@
 
 import type { AuthContextType, Profile, User } from "@/types/auth"
 import type React from "react"
-import { createContext, useContext, useEffect, useState, useCallback } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuthOperations } from "@/hooks/useAuthOperations"
 import { useProfileManager } from "@/hooks/useProfileManager"
@@ -14,72 +14,75 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isInitialized, setIsInitialized] = useState(false)
   
   const { login, register, logout, oauthLogin } = useAuthOperations()
   const { loadUserProfile, updateProfile: updateProfileData } = useProfileManager()
 
-  const handleAuthStateChange = useCallback(async (event: string, session: any) => {
-    console.log("Auth state changed:", event, session?.user?.email)
-
-    if (session?.user) {
-      console.log("User session found, loading profile...")
-      await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
-    } else {
-      console.log("No user session, clearing state...")
-      setUser(null)
-      setProfile(null)
-    }
-    
-    // Only set loading to false after handling auth state
-    setIsLoading(false)
-  }, [loadUserProfile])
-
   useEffect(() => {
-    if (isInitialized) return
+    let mounted = true
 
     const initializeAuth = async () => {
       try {
         console.log("Initializing auth state...")
-        setIsInitialized(true)
         
-        // Set up auth state listener
-        const {
-          data: { subscription },
-        } = supabase.auth.onAuthStateChange(handleAuthStateChange)
-
         // Get current session
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error("Error getting session:", error)
-          setIsLoading(false)
-          return () => subscription.unsubscribe()
+          if (mounted) {
+            setIsLoading(false)
+          }
+          return
         }
 
-        // Handle current session
         if (session?.user) {
-          console.log("Current session found on init:", session.user.email)
+          console.log("Session found on init:", session.user.email)
           await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
         } else {
-          console.log("No current session found")
+          console.log("No session found on init")
         }
         
-        setIsLoading(false)
-
-        return () => subscription.unsubscribe()
+        if (mounted) {
+          setIsLoading(false)
+        }
       } catch (error) {
         console.error("Error initializing auth:", error)
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
-    const cleanup = initializeAuth()
-    
+    // Set up auth state listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.email)
+
+      if (!mounted) return
+
+      if (session?.user) {
+        console.log("User authenticated, loading profile...")
+        setIsLoading(true)
+        await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
+        setIsLoading(false)
+      } else {
+        console.log("User signed out, clearing state...")
+        setUser(null)
+        setProfile(null)
+        setIsLoading(false)
+      }
+    })
+
+    // Initialize auth after setting up listener
+    initializeAuth()
+
     return () => {
-      cleanup?.then(cleanupFn => cleanupFn?.())
+      mounted = false
+      subscription.unsubscribe()
     }
-  }, [isInitialized, handleAuthStateChange, loadUserProfile])
+  }, [loadUserProfile])
 
   const updateProfile = async (data: Partial<Profile>): Promise<boolean> => {
     if (!user) return false
