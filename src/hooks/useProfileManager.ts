@@ -16,8 +16,7 @@ export const useProfileManager = () => {
     try {
       console.log("Loading profile for user:", userId, userEmail)
 
-      let profileData
-      const { data: fetchedProfileData, error } = await supabase
+      const { data: profileData, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
@@ -26,97 +25,79 @@ export const useProfileManager = () => {
       if (error) {
         console.error("Error loading profile:", error)
 
-        // If profile doesn't exist, create one for verified users
+        // Create profile if it doesn't exist
         if (error.code === "PGRST116") {
           console.log("Profile not found, creating new profile")
 
-          // Get user email from auth if not provided
-          let email = userEmail
-          if (!email) {
-            const {
-              data: { user: authUser },
-            } = await supabase.auth.getUser()
-            email = authUser?.email || ""
-          }
+          const { data: newProfile, error: createError } = await supabase
+            .from("profiles")
+            .insert([
+              {
+                id: userId,
+                full_name: userEmail.split("@")[0],
+                role: "user",
+              },
+            ])
+            .select()
+            .single()
 
-          if (email) {
-            const { data: newProfile, error: createError } = await supabase
-              .from("profiles")
-              .insert([
-                {
-                  id: userId,
-                  full_name: email.split("@")[0],
-                  role: "user",
-                },
-              ])
-              .select()
-              .single()
-
-            if (createError) {
-              console.error("Error creating profile:", createError)
-              return
-            }
-
-            console.log("Profile created:", newProfile)
-            profileData = newProfile
-          } else {
-            console.error("No email found for user")
+          if (createError) {
+            console.error("Error creating profile:", createError)
             return
           }
-        } else {
-          return
+
+          console.log("Profile created successfully:", newProfile)
+          await processProfileData(newProfile, userEmail, setProfile, setUser)
         }
-      } else {
-        profileData = fetchedProfileData
+        return
       }
 
-      if (profileData) {
-        console.log("Profile loaded successfully:", profileData.full_name)
-
-        // Ensure role is properly typed
-        const userRole =
-          profileData.role === "admin" || profileData.role === "user"
-            ? (profileData.role as "admin" | "user")
-            : ("user" as const)
-
-        // Type-safe conversion from database response to Profile type
-        const typedProfile: Profile = {
-          id: profileData.id,
-          full_name: profileData.full_name,
-          phone: profileData.phone,
-          address: profileData.address,
-          rt_rw: profileData.rt_rw,
-          occupation: profileData.occupation,
-          role: userRole,
-          avatar_url: profileData.avatar_url,
-          created_at: profileData.created_at,
-          updated_at: profileData.updated_at,
-        }
-
-        // Get email from auth session if not provided
-        let email = userEmail
-        if (!email) {
-          const {
-            data: { user: authUser },
-          } = await supabase.auth.getUser()
-          email = authUser?.email || ""
-        }
-
-        setProfile(typedProfile)
-        setUser({
-          id: profileData.id,
-          email: email || "",
-          name: profileData.full_name,
-          role: userRole,
-          avatar: profileData.avatar_url || undefined,
-        })
-
-        console.log("User state updated successfully")
-      }
+      await processProfileData(profileData, userEmail, setProfile, setUser)
     } catch (error) {
       console.error("Error in loadUserProfile:", error)
     }
   }, [])
+
+  const processProfileData = async (
+    profileData: any,
+    userEmail: string,
+    setProfile: (profile: Profile | null) => void,
+    setUser: (user: User | null) => void
+  ) => {
+    if (!profileData) return
+
+    console.log("Processing profile data:", profileData.full_name)
+
+    // Ensure role is properly typed
+    const userRole = profileData.role === "admin" || profileData.role === "user"
+      ? (profileData.role as "admin" | "user")
+      : ("user" as const)
+
+    // Type-safe conversion
+    const typedProfile: Profile = {
+      id: profileData.id,
+      full_name: profileData.full_name,
+      phone: profileData.phone,
+      address: profileData.address,
+      rt_rw: profileData.rt_rw,
+      occupation: profileData.occupation,
+      role: userRole,
+      avatar_url: profileData.avatar_url,
+      created_at: profileData.created_at,
+      updated_at: profileData.updated_at,
+    }
+
+    setProfile(typedProfile)
+    setUser({
+      id: profileData.id,
+      email: userEmail,
+      name: profileData.full_name,
+      role: userRole,
+      avatar: profileData.avatar_url || undefined,
+    })
+
+    console.log("Profile and user state updated successfully")
+  }
 
   const updateProfile = async (data: Partial<Profile>, userId: string): Promise<boolean> => {
     if (!userId) return false

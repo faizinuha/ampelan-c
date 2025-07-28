@@ -14,12 +14,14 @@ const Navigation = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  // Debug logging for troubleshooting - reduced frequency
+  // Debug logging with reduced frequency
   useEffect(() => {
     if (!isLoading) {
-      console.log("Navigation state updated:", {
-        user: user ? { id: user.id, email: user.email, role: user.role } : null,
-        profile: profile ? { id: profile.id, full_name: profile.full_name, role: profile.role } : null,
+      console.log("Navigation auth state:", {
+        hasUser: !!user,
+        hasProfile: !!profile,
+        userRole: user?.role,
+        profileRole: profile?.role,
       })
     }
   }, [user, profile, isLoading])
@@ -41,8 +43,8 @@ const Navigation = () => {
     }
   }
 
-  // Check if user is authenticated and profile is loaded
-  const isAuthenticated = Boolean(user && profile && !isLoading)
+  // Wait for auth to initialize before determining authentication status
+  const isAuthenticated = !isLoading && user && profile
 
   return (
     <>

@@ -23,66 +23,62 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("Auth state changed:", event, session?.user?.email)
 
     if (session?.user) {
-      console.log("User authenticated, loading profile...")
-      setIsLoading(true)
+      console.log("User session found, loading profile...")
       await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
-      setIsLoading(false)
     } else {
-      console.log("User signed out, clearing state...")
+      console.log("No user session, clearing state...")
       setUser(null)
       setProfile(null)
-      setIsLoading(false)
     }
+    
+    // Only set loading to false after handling auth state
+    setIsLoading(false)
   }, [loadUserProfile])
 
   useEffect(() => {
-    let mounted = true
-    
+    if (isInitialized) return
+
     const initializeAuth = async () => {
-      if (isInitialized) return
-      
       try {
         console.log("Initializing auth state...")
         setIsInitialized(true)
         
-        // Set up auth state listener first
+        // Set up auth state listener
         const {
           data: { subscription },
         } = supabase.auth.onAuthStateChange(handleAuthStateChange)
 
-        // Then get current session
+        // Get current session
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
           console.error("Error getting session:", error)
-          if (mounted) {
-            setIsLoading(false)
-          }
-          return
+          setIsLoading(false)
+          return () => subscription.unsubscribe()
         }
 
+        // Handle current session
         if (session?.user) {
-          console.log("Session found on init:", session.user.email)
+          console.log("Current session found on init:", session.user.email)
           await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
+        } else {
+          console.log("No current session found")
         }
         
-        if (mounted) {
-          setIsLoading(false)
-        }
+        setIsLoading(false)
 
-        return () => {
-          mounted = false
-          subscription.unsubscribe()
-        }
+        return () => subscription.unsubscribe()
       } catch (error) {
         console.error("Error initializing auth:", error)
-        if (mounted) {
-          setIsLoading(false)
-        }
+        setIsLoading(false)
       }
     }
 
-    initializeAuth()
+    const cleanup = initializeAuth()
+    
+    return () => {
+      cleanup?.then(cleanupFn => cleanupFn?.())
+    }
   }, [isInitialized, handleAuthStateChange, loadUserProfile])
 
   const updateProfile = async (data: Partial<Profile>): Promise<boolean> => {
