@@ -1,4 +1,3 @@
-
 import { useLocation } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import NotificationCenter from '@/components/NotificationCenter';
