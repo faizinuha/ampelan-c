@@ -14,13 +14,14 @@ const Navigation = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  // Debug logging untuk troubleshooting
+  // Debug logging for troubleshooting - reduced frequency
   useEffect(() => {
-    console.log("Navigation state:", {
-      user: user ? { id: user.id, email: user.email, role: user.role } : null,
-      profile: profile ? { id: profile.id, full_name: profile.full_name, role: profile.role } : null,
-      isLoading,
-    })
+    if (!isLoading) {
+      console.log("Navigation state updated:", {
+        user: user ? { id: user.id, email: user.email, role: user.role } : null,
+        profile: profile ? { id: profile.id, full_name: profile.full_name, role: profile.role } : null,
+      })
+    }
   }, [user, profile, isLoading])
 
   const handleLogout = () => {
@@ -40,8 +41,8 @@ const Navigation = () => {
     }
   }
 
-  // Cek apakah user sudah login dan profile sudah dimuat
-  const isAuthenticated = Boolean(user && profile)
+  // Check if user is authenticated and profile is loaded
+  const isAuthenticated = Boolean(user && profile && !isLoading)
 
   return (
     <>

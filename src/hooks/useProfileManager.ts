@@ -2,11 +2,12 @@
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import type { Profile, User } from "@/types/auth"
+import { useCallback } from "react"
 
 export const useProfileManager = () => {
   const { toast } = useToast()
 
-  const loadUserProfile = async (
+  const loadUserProfile = useCallback(async (
     userId: string, 
     userEmail: string,
     setProfile: (profile: Profile | null) => void,
@@ -16,7 +17,11 @@ export const useProfileManager = () => {
       console.log("Loading profile for user:", userId, userEmail)
 
       let profileData
-      const { data: fetchedProfileData, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
+      const { data: fetchedProfileData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single()
 
       if (error) {
         console.error("Error loading profile:", error)
@@ -40,7 +45,7 @@ export const useProfileManager = () => {
               .insert([
                 {
                   id: userId,
-                  full_name: email.split("@")[0], // Use email prefix as default name
+                  full_name: email.split("@")[0],
                   role: "user",
                 },
               ])
@@ -66,7 +71,7 @@ export const useProfileManager = () => {
       }
 
       if (profileData) {
-        console.log("Profile loaded:", profileData)
+        console.log("Profile loaded successfully:", profileData.full_name)
 
         // Ensure role is properly typed
         const userRole =
@@ -106,17 +111,12 @@ export const useProfileManager = () => {
           avatar: profileData.avatar_url || undefined,
         })
 
-        console.log("User state set:", {
-          id: profileData.id,
-          email: email,
-          name: profileData.full_name,
-          role: userRole,
-        })
+        console.log("User state updated successfully")
       }
     } catch (error) {
       console.error("Error in loadUserProfile:", error)
     }
-  }
+  }, [])
 
   const updateProfile = async (data: Partial<Profile>, userId: string): Promise<boolean> => {
     if (!userId) return false
