@@ -23,52 +23,88 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        console.log("Initializing auth state...")
+        console.log("🔄 Initializing auth state...")
         
-        // Get current session
+        // Get current session with error handling
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error("Error getting session:", error)
+          console.error("❌ Error getting session:", error)
           if (mounted) {
+            setUser(null)
+            setProfile(null)
             setIsLoading(false)
           }
           return
         }
 
         if (session?.user) {
-          console.log("Session found on init:", session.user.email)
-          await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
+          console.log("✅ Session found, user:", session.user.email)
+          if (mounted) {
+            setIsLoading(true)
+            try {
+              await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
+              console.log("✅ Profile loaded successfully")
+            } catch (profileError) {
+              console.error("❌ Error loading profile:", profileError)
+            } finally {
+              setIsLoading(false)
+            }
+          }
         } else {
-          console.log("No session found on init")
-        }
-        
-        if (mounted) {
-          setIsLoading(false)
+          console.log("ℹ️ No active session found")
+          if (mounted) {
+            setUser(null)
+            setProfile(null)
+            setIsLoading(false)
+          }
         }
       } catch (error) {
-        console.error("Error initializing auth:", error)
+        console.error("❌ Error initializing auth:", error)
         if (mounted) {
+          setUser(null)
+          setProfile(null)
           setIsLoading(false)
         }
       }
     }
 
-    // Set up auth state listener
+    // Set up auth state listener with improved error handling
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.email)
+      console.log("🔄 Auth state changed:", event, session?.user?.email)
 
       if (!mounted) return
 
-      if (session?.user) {
-        console.log("User authenticated, loading profile...")
-        setIsLoading(true)
-        await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
-        setIsLoading(false)
-      } else {
-        console.log("User signed out, clearing state...")
+      try {
+        if (session?.user) {
+          console.log("✅ User authenticated, loading profile...")
+          setIsLoading(true)
+          
+          // Use setTimeout to avoid blocking auth state change
+          setTimeout(async () => {
+            if (mounted) {
+              try {
+                await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
+                console.log("✅ Profile loaded via auth state change")
+              } catch (error) {
+                console.error("❌ Error loading profile in auth state change:", error)
+                setUser(null)
+                setProfile(null)
+              } finally {
+                setIsLoading(false)
+              }
+            }
+          }, 0)
+        } else {
+          console.log("🚪 User signed out, clearing state...")
+          setUser(null)
+          setProfile(null)
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error("❌ Error in auth state change handler:", error)
         setUser(null)
         setProfile(null)
         setIsLoading(false)
@@ -81,17 +117,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       mounted = false
       subscription.unsubscribe()
+      console.log("🧹 Auth context cleanup completed")
     }
   }, [loadUserProfile])
 
   const updateProfile = async (data: Partial<Profile>): Promise<boolean> => {
-    if (!user) return false
-
-    const success = await updateProfileData(data, user.id)
-    if (success) {
-      await loadUserProfile(user.id, user.email, setProfile, setUser)
+    if (!user) {
+      console.warn("⚠️ Cannot update profile: no user found")
+      return false
     }
-    return success
+
+    try {
+      const success = await updateProfileData(data, user.id)
+      if (success) {
+        console.log("✅ Profile updated, reloading...")
+        await loadUserProfile(user.id, user.email, setProfile, setUser)
+      }
+      return success
+    } catch (error) {
+      console.error("❌ Error updating profile:", error)
+      return false
+    }
   }
 
   const value: AuthContextType = {

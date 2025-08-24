@@ -14,18 +14,18 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, oauthLogin, isLoading, user } = useAuth();
+  const { login, oauthLogin, isLoading, user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect if already logged in - but wait for auth loading to complete
+  // Enhanced redirect logic with better state checking
   useEffect(() => {
-    // Only redirect if we're not loading and user is confirmed to be logged in
-    if (!isLoading && user) {
-      console.log('User already logged in, redirecting to home');
+    // Only redirect if we're not loading, have both user and profile, and not currently submitting
+    if (!isLoading && user && profile && !isSubmitting) {
+      console.log('✅ User authenticated with profile, redirecting to home');
       navigate('/', { replace: true });
     }
-  }, [user, isLoading, navigate]);
+  }, [user, profile, isLoading, navigate, isSubmitting]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +42,17 @@ const Login = () => {
     setIsSubmitting(true);
     
     try {
+      console.log('🔄 Attempting login...');
       const success = await login(email, password);
       
       if (success) {
-        // Navigation will be handled by useEffect after user state changes
-        console.log('Login successful, waiting for redirect');
+        console.log('✅ Login successful, waiting for profile loading...');
+        // Don't navigate here, let useEffect handle it after profile loads
+      } else {
+        console.log('❌ Login failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -75,7 +78,7 @@ const Login = () => {
         });
       }
     } catch (error) {
-      console.error('OAuth error:', error);
+      console.error('❌ OAuth error:', error);
       toast({
         title: "Error",
         description: `Gagal login menggunakan ${provider}`,
@@ -159,7 +162,6 @@ const Login = () => {
 
           {/* Login Card with Rural Design */}
           <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm relative overflow-hidden">
-            {/* Card decorative header */}
             <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-500 via-amber-500 to-green-500"></div>
             
             <CardHeader className="relative">

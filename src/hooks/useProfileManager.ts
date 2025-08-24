@@ -13,60 +13,82 @@ export const useProfileManager = () => {
     setUser: (user: User | null) => void
   ) => {
     try {
-      console.log("Loading profile for user:", userId, userEmail)
+      console.log("🔄 Loading profile for user:", userId, userEmail)
 
+      if (!userId) {
+        console.error("❌ No user ID provided")
+        return
+      }
+
+      // Fetch profile with retry mechanism
       let profileData
-      const { data: fetchedProfileData, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
+      let retryCount = 0
+      const maxRetries = 3
 
-      if (error) {
-        console.error("Error loading profile:", error)
+      while (retryCount < maxRetries) {
+        try {
+          const { data: fetchedProfileData, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
+            .single()
 
-        // If profile doesn't exist, create one for verified users
-        if (error.code === "PGRST116") {
-          console.log("Profile not found, creating new profile")
+          if (error) {
+            if (error.code === "PGRST116") {
+              console.log("📝 Profile not found, creating new profile...")
+              
+              // Get user email from auth if not provided
+              let email = userEmail
+              if (!email) {
+                const { data: { user: authUser } } = await supabase.auth.getUser()
+                email = authUser?.email || ""
+              }
 
-          // Get user email from auth if not provided
-          let email = userEmail
-          if (!email) {
-            const {
-              data: { user: authUser },
-            } = await supabase.auth.getUser()
-            email = authUser?.email || ""
-          }
+              if (email) {
+                const { data: newProfile, error: createError } = await supabase
+                  .from("profiles")
+                  .insert([
+                    {
+                      id: userId,
+                      full_name: email.split("@")[0],
+                      role: "user",
+                    },
+                  ])
+                  .select()
+                  .single()
 
-          if (email) {
-            const { data: newProfile, error: createError } = await supabase
-              .from("profiles")
-              .insert([
-                {
-                  id: userId,
-                  full_name: email.split("@")[0], // Use email prefix as default name
-                  role: "user",
-                },
-              ])
-              .select()
-              .single()
+                if (createError) {
+                  console.error("❌ Error creating profile:", createError)
+                  throw createError
+                }
 
-            if (createError) {
-              console.error("Error creating profile:", createError)
-              return
+                console.log("✅ Profile created:", newProfile)
+                profileData = newProfile
+                break
+              } else {
+                console.error("❌ No email found for user")
+                return
+              }
+            } else {
+              console.error("❌ Error loading profile:", error)
+              throw error
             }
-
-            console.log("Profile created:", newProfile)
-            profileData = newProfile
           } else {
-            console.error("No email found for user")
-            return
+            profileData = fetchedProfileData
+            break
           }
-        } else {
-          return
+        } catch (retryError) {
+          retryCount++
+          if (retryCount >= maxRetries) {
+            throw retryError
+          }
+          console.warn(`⚠️ Retry ${retryCount}/${maxRetries} loading profile...`)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
         }
-      } else {
-        profileData = fetchedProfileData
       }
 
       if (profileData) {
-        console.log("Profile loaded:", profileData)
+        console.log("✅ Profile loaded:", profileData)
 
         // Ensure role is properly typed
         const userRole =
@@ -77,7 +99,7 @@ export const useProfileManager = () => {
         // Type-safe conversion from database response to Profile type
         const typedProfile: Profile = {
           id: profileData.id,
-          full_name: profileData.full_name,
+          full_name: profileData.full_name || "",
           phone: profileData.phone,
           address: profileData.address,
           rt_rw: profileData.rt_rw,
@@ -91,9 +113,7 @@ export const useProfileManager = () => {
         // Get email from auth session if not provided
         let email = userEmail
         if (!email) {
-          const {
-            data: { user: authUser },
-          } = await supabase.auth.getUser()
+          const { data: { user: authUser } } = await supabase.auth.getUser()
           email = authUser?.email || ""
         }
 
@@ -101,12 +121,12 @@ export const useProfileManager = () => {
         setUser({
           id: profileData.id,
           email: email || "",
-          name: profileData.full_name,
+          name: profileData.full_name || "",
           role: userRole,
           avatar: profileData.avatar_url || undefined,
         })
 
-        console.log("User state set:", {
+        console.log("✅ User state set successfully:", {
           id: profileData.id,
           email: email,
           name: profileData.full_name,
@@ -114,17 +134,35 @@ export const useProfileManager = () => {
         })
       }
     } catch (error) {
-      console.error("Error in loadUserProfile:", error)
+      console.error("❌ Error in loadUserProfile:", error)
+      // Don't clear the state on error, let the UI handle it gracefully
+      toast({
+        title: "Peringatan",
+        description: "Gagal memuat profil pengguna. Silakan muat ulang halaman.",
+        variant: "destructive",
+      })
     }
   }
 
   const updateProfile = async (data: Partial<Profile>, userId: string): Promise<boolean> => {
-    if (!userId) return false
+    if (!userId) {
+      console.error("❌ No user ID provided for profile update")
+      return false
+    }
 
     try {
-      const { error } = await supabase.from("profiles").update(data).eq("id", userId)
+      console.log("🔄 Updating profile for user:", userId, data)
+      
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          ...data,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId)
 
       if (error) {
+        console.error("❌ Error updating profile:", error)
         toast({
           title: "Error",
           description: error.message,
@@ -133,13 +171,19 @@ export const useProfileManager = () => {
         return false
       }
 
+      console.log("✅ Profile updated successfully")
       toast({
         title: "Berhasil",
         description: "Profil berhasil diperbarui",
       })
       return true
     } catch (error) {
-      console.error("Update profile error:", error)
+      console.error("❌ Update profile error:", error)
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat memperbarui profil",
+        variant: "destructive",
+      })
       return false
     }
   }
