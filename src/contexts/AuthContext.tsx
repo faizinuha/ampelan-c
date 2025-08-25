@@ -3,7 +3,7 @@
 
 import type { AuthContextType, Profile, User } from "@/types/auth"
 import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuthOperations } from "@/hooks/useAuthOperations"
 import { useProfileManager } from "@/hooks/useProfileManager"
@@ -14,18 +14,64 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const initializingRef = useRef(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   
   const { login, register, logout, oauthLogin } = useAuthOperations()
   const { loadUserProfile, updateProfile: updateProfileData } = useProfileManager()
+
+  // Timeout untuk mencegah loading selamanya
+  const startLoadingTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+    
+    timeoutRef.current = setTimeout(() => {
+      console.warn("⏰ Loading timeout reached, setting loading to false")
+      setIsLoading(false)
+    }, 10000) // 10 detik timeout
+  }, [])
+
+  const clearLoadingTimeout = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+      timeoutRef.current = null
+    }
+  }, [])
+
+  const handleProfileLoad = useCallback(async (userId: string, userEmail: string) => {
+    try {
+      console.log("🔄 Loading profile for:", userId, userEmail)
+      startLoadingTimeout()
+      
+      await loadUserProfile(userId, userEmail, setProfile, setUser)
+      console.log("✅ Profile loaded successfully")
+    } catch (error) {
+      console.error("❌ Error loading profile:", error)
+      // Jangan clear state pada error, biarkan user tetap bisa menggunakan app
+    } finally {
+      clearLoadingTimeout()
+      setIsLoading(false)
+    }
+  }, [loadUserProfile, startLoadingTimeout, clearLoadingTimeout])
 
   useEffect(() => {
     let mounted = true
 
     const initializeAuth = async () => {
+      // Prevent multiple initialization
+      if (initializingRef.current) {
+        console.log("🔄 Auth already initializing, skipping...")
+        return
+      }
+
+      initializingRef.current = true
+
       try {
         console.log("🔄 Initializing auth state...")
+        startLoadingTimeout()
         
-        // Get current session with error handling
+        // Get current session
         const { data: { session }, error } = await supabase.auth.getSession()
         
         if (error) {
@@ -34,29 +80,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUser(null)
             setProfile(null)
             setIsLoading(false)
+            clearLoadingTimeout()
           }
           return
         }
 
-        if (session?.user) {
+        if (session?.user && mounted) {
           console.log("✅ Session found, user:", session.user.email)
-          if (mounted) {
-            setIsLoading(true)
-            try {
-              await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
-              console.log("✅ Profile loaded successfully")
-            } catch (profileError) {
-              console.error("❌ Error loading profile:", profileError)
-            } finally {
-              setIsLoading(false)
-            }
-          }
+          await handleProfileLoad(session.user.id, session.user.email || "")
         } else {
           console.log("ℹ️ No active session found")
           if (mounted) {
             setUser(null)
             setProfile(null)
             setIsLoading(false)
+            clearLoadingTimeout()
           }
         }
       } catch (error) {
@@ -65,11 +103,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(null)
           setProfile(null)
           setIsLoading(false)
+          clearLoadingTimeout()
         }
+      } finally {
+        initializingRef.current = false
       }
     }
 
-    // Set up auth state listener with improved error handling
+    // Set up auth state listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -77,26 +118,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!mounted) return
 
+      // Clear any existing timeout
+      clearLoadingTimeout()
+
       try {
         if (session?.user) {
           console.log("✅ User authenticated, loading profile...")
           setIsLoading(true)
-          
-          // Use setTimeout to avoid blocking auth state change
-          setTimeout(async () => {
-            if (mounted) {
-              try {
-                await loadUserProfile(session.user.id, session.user.email || "", setProfile, setUser)
-                console.log("✅ Profile loaded via auth state change")
-              } catch (error) {
-                console.error("❌ Error loading profile in auth state change:", error)
-                setUser(null)
-                setProfile(null)
-              } finally {
-                setIsLoading(false)
-              }
-            }
-          }, 0)
+          await handleProfileLoad(session.user.id, session.user.email || "")
         } else {
           console.log("🚪 User signed out, clearing state...")
           setUser(null)
@@ -111,15 +140,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     })
 
-    // Initialize auth after setting up listener
+    // Initialize auth
     initializeAuth()
 
     return () => {
       mounted = false
+      clearLoadingTimeout()
       subscription.unsubscribe()
       console.log("🧹 Auth context cleanup completed")
     }
-  }, [loadUserProfile])
+  }, [handleProfileLoad, startLoadingTimeout, clearLoadingTimeout])
 
   const updateProfile = async (data: Partial<Profile>): Promise<boolean> => {
     if (!user) {
@@ -131,11 +161,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const success = await updateProfileData(data, user.id)
       if (success) {
         console.log("✅ Profile updated, reloading...")
-        await loadUserProfile(user.id, user.email, setProfile, setUser)
+        setIsLoading(true)
+        await handleProfileLoad(user.id, user.email)
       }
       return success
     } catch (error) {
       console.error("❌ Error updating profile:", error)
+      setIsLoading(false)
       return false
     }
   }

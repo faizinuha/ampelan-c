@@ -17,130 +17,136 @@ export const useProfileManager = () => {
 
       if (!userId) {
         console.error("❌ No user ID provided")
-        return
+        throw new Error("No user ID provided")
       }
 
-      // Fetch profile with retry mechanism
-      let profileData
-      let retryCount = 0
-      const maxRetries = 3
+      // Fetch profile with single attempt (no retry to prevent loops)
+      const { data: fetchedProfileData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single()
 
-      while (retryCount < maxRetries) {
-        try {
-          const { data: fetchedProfileData, error } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", userId)
-            .single()
+      if (error) {
+        if (error.code === "PGRST116") {
+          console.log("📝 Profile not found, creating new profile...")
+          
+          // Get user email from auth if not provided
+          let email = userEmail
+          if (!email) {
+            const { data: { user: authUser } } = await supabase.auth.getUser()
+            email = authUser?.email || ""
+          }
 
-          if (error) {
-            if (error.code === "PGRST116") {
-              console.log("📝 Profile not found, creating new profile...")
-              
-              // Get user email from auth if not provided
-              let email = userEmail
-              if (!email) {
-                const { data: { user: authUser } } = await supabase.auth.getUser()
-                email = authUser?.email || ""
-              }
+          if (email) {
+            const { data: newProfile, error: createError } = await supabase
+              .from("profiles")
+              .insert([
+                {
+                  id: userId,
+                  full_name: email.split("@")[0],
+                  role: "user",
+                },
+              ])
+              .select()
+              .single()
 
-              if (email) {
-                const { data: newProfile, error: createError } = await supabase
-                  .from("profiles")
-                  .insert([
-                    {
-                      id: userId,
-                      full_name: email.split("@")[0],
-                      role: "user",
-                    },
-                  ])
-                  .select()
-                  .single()
-
-                if (createError) {
-                  console.error("❌ Error creating profile:", createError)
-                  throw createError
-                }
-
-                console.log("✅ Profile created:", newProfile)
-                profileData = newProfile
-                break
-              } else {
-                console.error("❌ No email found for user")
-                return
-              }
-            } else {
-              console.error("❌ Error loading profile:", error)
-              throw error
+            if (createError) {
+              console.error("❌ Error creating profile:", createError)
+              throw createError
             }
+
+            console.log("✅ Profile created:", newProfile)
+            const profileData = newProfile
+            
+            // Set the created profile
+            const typedProfile: Profile = {
+              id: profileData.id,
+              full_name: profileData.full_name || "",
+              phone: profileData.phone,
+              address: profileData.address,
+              rt_rw: profileData.rt_rw,
+              occupation: profileData.occupation,
+              role: profileData.role === "admin" ? "admin" : "user",
+              avatar_url: profileData.avatar_url,
+              created_at: profileData.created_at,
+              updated_at: profileData.updated_at,
+            }
+
+            setProfile(typedProfile)
+            setUser({
+              id: profileData.id,
+              email: email || "",
+              name: profileData.full_name || "",
+              role: profileData.role === "admin" ? "admin" : "user",
+              avatar: profileData.avatar_url || undefined,
+            })
+
+            return
           } else {
-            profileData = fetchedProfileData
-            break
+            console.error("❌ No email found for user")
+            throw new Error("No email found for user")
           }
-        } catch (retryError) {
-          retryCount++
-          if (retryCount >= maxRetries) {
-            throw retryError
-          }
-          console.warn(`⚠️ Retry ${retryCount}/${maxRetries} loading profile...`)
-          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount))
+        } else {
+          console.error("❌ Error loading profile:", error)
+          throw error
         }
       }
 
-      if (profileData) {
-        console.log("✅ Profile loaded:", profileData)
+      // Profile found successfully
+      const profileData = fetchedProfileData
+      console.log("✅ Profile loaded:", profileData)
 
-        // Ensure role is properly typed
-        const userRole =
-          profileData.role === "admin" || profileData.role === "user"
-            ? (profileData.role as "admin" | "user")
-            : ("user" as const)
+      // Ensure role is properly typed
+      const userRole =
+        profileData.role === "admin" || profileData.role === "user"
+          ? (profileData.role as "admin" | "user")
+          : ("user" as const)
 
-        // Type-safe conversion from database response to Profile type
-        const typedProfile: Profile = {
-          id: profileData.id,
-          full_name: profileData.full_name || "",
-          phone: profileData.phone,
-          address: profileData.address,
-          rt_rw: profileData.rt_rw,
-          occupation: profileData.occupation,
-          role: userRole,
-          avatar_url: profileData.avatar_url,
-          created_at: profileData.created_at,
-          updated_at: profileData.updated_at,
-        }
-
-        // Get email from auth session if not provided
-        let email = userEmail
-        if (!email) {
-          const { data: { user: authUser } } = await supabase.auth.getUser()
-          email = authUser?.email || ""
-        }
-
-        setProfile(typedProfile)
-        setUser({
-          id: profileData.id,
-          email: email || "",
-          name: profileData.full_name || "",
-          role: userRole,
-          avatar: profileData.avatar_url || undefined,
-        })
-
-        console.log("✅ User state set successfully:", {
-          id: profileData.id,
-          email: email,
-          name: profileData.full_name,
-          role: userRole,
-        })
+      // Type-safe conversion from database response to Profile type
+      const typedProfile: Profile = {
+        id: profileData.id,
+        full_name: profileData.full_name || "",
+        phone: profileData.phone,
+        address: profileData.address,
+        rt_rw: profileData.rt_rw,
+        occupation: profileData.occupation,
+        role: userRole,
+        avatar_url: profileData.avatar_url,
+        created_at: profileData.created_at,
+        updated_at: profileData.updated_at,
       }
+
+      // Get email from auth session if not provided
+      let email = userEmail
+      if (!email) {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        email = authUser?.email || ""
+      }
+
+      setProfile(typedProfile)
+      setUser({
+        id: profileData.id,
+        email: email || "",
+        name: profileData.full_name || "",
+        role: userRole,
+        avatar: profileData.avatar_url || undefined,
+      })
+
+      console.log("✅ User state set successfully:", {
+        id: profileData.id,
+        email: email,
+        name: profileData.full_name,
+        role: userRole,
+      })
     } catch (error) {
       console.error("❌ Error in loadUserProfile:", error)
-      // Don't clear the state on error, let the UI handle it gracefully
       toast({
         title: "Peringatan",
-        description: "Gagal memuat profil pengguna. Silakan muat ulang halaman.",
+        description: "Gagal memuat profil pengguna. Silakan coba lagi.",
         variant: "destructive",
       })
+      throw error // Re-throw to let AuthContext handle it
     }
   }
 
