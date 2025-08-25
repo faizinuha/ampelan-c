@@ -3,10 +3,10 @@
 
 import type { AuthContextType, Profile, User } from "@/types/auth"
 import type React from "react"
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { supabase } from "@/integrations/supabase/client"
-import { useAuthOperations } from "@/hooks/useAuthOperations"
-import { useProfileManager } from "@/hooks/useProfileManager"
+import { useToast } from "@/hooks/use-toast"
+import { useNavigate } from "react-router-dom"
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -14,160 +14,254 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const initializingRef = useRef(false)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  
-  const { login, register, logout, oauthLogin } = useAuthOperations()
-  const { loadUserProfile, updateProfile: updateProfileData } = useProfileManager()
+  const { toast } = useToast()
+  const navigate = useNavigate()
 
-  // Timeout untuk mencegah loading selamanya
-  const startLoadingTimeout = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-    
-    timeoutRef.current = setTimeout(() => {
-      console.warn("⏰ Loading timeout reached, setting loading to false")
-      setIsLoading(false)
-    }, 10000) // 10 detik timeout
-  }, [])
-
-  const clearLoadingTimeout = useCallback(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
-    }
-  }, [])
-
-  const handleProfileLoad = useCallback(async (userId: string, userEmail: string) => {
+  // Simple profile loader
+  const loadProfile = async (authUser: any) => {
     try {
-      console.log("🔄 Loading profile for:", userId, userEmail)
-      startLoadingTimeout()
+      console.log("🔄 Loading profile for:", authUser.email)
       
-      await loadUserProfile(userId, userEmail, setProfile, setUser)
+      const { data: profileData, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", authUser.id)
+        .single()
+
+      if (error && error.code === "PGRST116") {
+        // Create profile if not exists
+        console.log("📝 Creating new profile")
+        const { data: newProfile, error: createError } = await supabase
+          .from("profiles")
+          .insert([{
+            id: authUser.id,
+            full_name: authUser.email?.split("@")[0] || "User",
+            role: "user",
+          }])
+          .select()
+          .single()
+
+        if (createError) throw createError
+        
+        const typedProfile: Profile = {
+          id: newProfile.id,
+          full_name: newProfile.full_name || "",
+          phone: newProfile.phone,
+          address: newProfile.address,
+          rt_rw: newProfile.rt_rw,
+          occupation: newProfile.occupation,
+          role: "user",
+          avatar_url: newProfile.avatar_url,
+          created_at: newProfile.created_at,
+          updated_at: newProfile.updated_at,
+        }
+
+        setProfile(typedProfile)
+        setUser({
+          id: newProfile.id,
+          email: authUser.email || "",
+          name: newProfile.full_name || "",
+          role: "user",
+          avatar: newProfile.avatar_url || undefined,
+        })
+        return
+      }
+
+      if (error) throw error
+
+      // Profile exists
+      const userRole = profileData.role === "admin" ? "admin" : "user"
+      
+      const typedProfile: Profile = {
+        id: profileData.id,
+        full_name: profileData.full_name || "",
+        phone: profileData.phone,
+        address: profileData.address,
+        rt_rw: profileData.rt_rw,
+        occupation: profileData.occupation,
+        role: userRole,
+        avatar_url: profileData.avatar_url,
+        created_at: profileData.created_at,
+        updated_at: profileData.updated_at,
+      }
+
+      setProfile(typedProfile)
+      setUser({
+        id: profileData.id,
+        email: authUser.email || "",
+        name: profileData.full_name || "",
+        role: userRole,
+        avatar: profileData.avatar_url || undefined,
+      })
+
       console.log("✅ Profile loaded successfully")
     } catch (error) {
       console.error("❌ Error loading profile:", error)
-      // Jangan clear state pada error, biarkan user tetap bisa menggunakan app
-    } finally {
-      clearLoadingTimeout()
-      setIsLoading(false)
+      setUser(null)
+      setProfile(null)
     }
-  }, [loadUserProfile, startLoadingTimeout, clearLoadingTimeout])
+  }
 
   useEffect(() => {
     let mounted = true
 
-    const initializeAuth = async () => {
-      // Prevent multiple initialization
-      if (initializingRef.current) {
-        console.log("🔄 Auth already initializing, skipping...")
-        return
-      }
-
-      initializingRef.current = true
-
+    // Get initial session
+    const initAuth = async () => {
       try {
-        console.log("🔄 Initializing auth state...")
-        startLoadingTimeout()
+        const { data: { session } } = await supabase.auth.getSession()
         
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error("❌ Error getting session:", error)
-          if (mounted) {
-            setUser(null)
-            setProfile(null)
-            setIsLoading(false)
-            clearLoadingTimeout()
-          }
-          return
-        }
-
         if (session?.user && mounted) {
-          console.log("✅ Session found, user:", session.user.email)
-          await handleProfileLoad(session.user.id, session.user.email || "")
-        } else {
-          console.log("ℹ️ No active session found")
-          if (mounted) {
-            setUser(null)
-            setProfile(null)
-            setIsLoading(false)
-            clearLoadingTimeout()
-          }
+          await loadProfile(session.user)
         }
       } catch (error) {
-        console.error("❌ Error initializing auth:", error)
-        if (mounted) {
-          setUser(null)
-          setProfile(null)
-          setIsLoading(false)
-          clearLoadingTimeout()
-        }
+        console.error("❌ Init auth error:", error)
       } finally {
-        initializingRef.current = false
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
-    // Set up auth state listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("🔄 Auth state changed:", event, session?.user?.email)
-
+    // Listen to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return
 
-      // Clear any existing timeout
-      clearLoadingTimeout()
+      console.log("🔄 Auth event:", event)
 
-      try {
-        if (session?.user) {
-          console.log("✅ User authenticated, loading profile...")
-          setIsLoading(true)
-          await handleProfileLoad(session.user.id, session.user.email || "")
-        } else {
-          console.log("🚪 User signed out, clearing state...")
-          setUser(null)
-          setProfile(null)
-          setIsLoading(false)
-        }
-      } catch (error) {
-        console.error("❌ Error in auth state change handler:", error)
+      if (session?.user) {
+        setIsLoading(true)
+        await loadProfile(session.user)
+        setIsLoading(false)
+      } else {
         setUser(null)
         setProfile(null)
         setIsLoading(false)
       }
     })
 
-    // Initialize auth
-    initializeAuth()
+    initAuth()
 
     return () => {
       mounted = false
-      clearLoadingTimeout()
       subscription.unsubscribe()
-      console.log("🧹 Auth context cleanup completed")
     }
-  }, [handleProfileLoad, startLoadingTimeout, clearLoadingTimeout])
+  }, [])
 
-  const updateProfile = async (data: Partial<Profile>): Promise<boolean> => {
-    if (!user) {
-      console.warn("⚠️ Cannot update profile: no user found")
+  // Auth operations
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        })
+        return false
+      }
+
+      toast({
+        title: "Berhasil!",
+        description: "Selamat datang! Anda berhasil masuk ke akun.",
+      })
+      navigate("/")
+      return true
+    } catch (error) {
+      console.error("❌ Login error:", error)
       return false
     }
+  }
+
+  const register = async (email: string, password: string, name: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name },
+        },
+      })
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        })
+        return false
+      }
+
+      if (data.user && !data.user.confirmed_at) {
+        toast({
+          title: "Registrasi Berhasil!",
+          description: "Silakan cek email untuk verifikasi.",
+          duration: 8000,
+        })
+        return true
+      }
+
+      return true
+    } catch (error) {
+      console.error("❌ Register error:", error)
+      return false
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut()
+      toast({
+        title: "Berhasil",
+        description: "Anda telah keluar dari akun",
+      })
+      navigate("/")
+    } catch (error) {
+      console.error("❌ Logout error:", error)
+    }
+  }
+
+  const oauthLogin = async (provider: "google" | "github" | "facebook" | "twitter"): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({ provider })
+      return !error
+    } catch (error) {
+      console.error("❌ OAuth error:", error)
+      return false
+    }
+  }
+
+  const updateProfile = async (data: Partial<Profile>): Promise<boolean> => {
+    if (!user) return false
 
     try {
-      const success = await updateProfileData(data, user.id)
-      if (success) {
-        console.log("✅ Profile updated, reloading...")
-        setIsLoading(true)
-        await handleProfileLoad(user.id, user.email)
+      const { error } = await supabase
+        .from("profiles")
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq("id", user.id)
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        })
+        return false
       }
-      return success
+
+      // Reload profile
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      if (authUser) {
+        await loadProfile(authUser)
+      }
+
+      toast({
+        title: "Berhasil",
+        description: "Profil berhasil diperbarui",
+      })
+      return true
     } catch (error) {
-      console.error("❌ Error updating profile:", error)
-      setIsLoading(false)
+      console.error("❌ Update profile error:", error)
       return false
     }
   }
