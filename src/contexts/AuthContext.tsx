@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast()
   const navigate = useNavigate()
 
-  // Simple profile loader
+  // Simple profile loader with better error handling
   const loadProfile = async (authUser: any) => {
     try {
       console.log("🔄 Loading profile for:", authUser.email)
@@ -26,9 +26,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .from("profiles")
         .select("*")
         .eq("id", authUser.id)
-        .single()
+        .maybeSingle()
 
-      if (error && error.code === "PGRST116") {
+      if (error) {
+        console.error("❌ Error loading profile:", error)
+        // Don't throw error, just create default profile
+      }
+
+      if (!profileData) {
         // Create profile if not exists
         console.log("📝 Creating new profile")
         const { data: newProfile, error: createError } = await supabase
@@ -39,35 +44,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             role: "user",
           }])
           .select()
-          .single()
+          .maybeSingle()
 
-        if (createError) throw createError
-        
-        const typedProfile: Profile = {
-          id: newProfile.id,
-          full_name: newProfile.full_name || "",
-          phone: newProfile.phone,
-          address: newProfile.address,
-          rt_rw: newProfile.rt_rw,
-          occupation: newProfile.occupation,
-          role: "user",
-          avatar_url: newProfile.avatar_url,
-          created_at: newProfile.created_at,
-          updated_at: newProfile.updated_at,
+        if (createError) {
+          console.error("❌ Error creating profile:", createError)
+          // Set basic user data even if profile creation fails
+          setUser({
+            id: authUser.id,
+            email: authUser.email || "",
+            name: authUser.email?.split("@")[0] || "User",
+            role: "user",
+            avatar: undefined,
+          })
+          setProfile(null)
+          return
         }
 
-        setProfile(typedProfile)
-        setUser({
-          id: newProfile.id,
-          email: authUser.email || "",
-          name: newProfile.full_name || "",
-          role: "user",
-          avatar: newProfile.avatar_url || undefined,
-        })
+        if (newProfile) {
+          const typedProfile: Profile = {
+            id: newProfile.id,
+            full_name: newProfile.full_name || "",
+            phone: newProfile.phone,
+            address: newProfile.address,
+            rt_rw: newProfile.rt_rw,
+            occupation: newProfile.occupation,
+            role: "user",
+            avatar_url: newProfile.avatar_url,
+            created_at: newProfile.created_at,
+            updated_at: newProfile.updated_at,
+          }
+
+          setProfile(typedProfile)
+          setUser({
+            id: newProfile.id,
+            email: authUser.email || "",
+            name: newProfile.full_name || "",
+            role: "user",
+            avatar: newProfile.avatar_url || undefined,
+          })
+        }
         return
       }
-
-      if (error) throw error
 
       // Profile exists
       const userRole = profileData.role === "admin" ? "admin" : "user"
@@ -96,27 +113,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       console.log("✅ Profile loaded successfully")
     } catch (error) {
-      console.error("❌ Error loading profile:", error)
-      setUser(null)
+      console.error("❌ Error in loadProfile:", error)
+      // Set basic user data even if profile loading fails
+      setUser({
+        id: authUser.id,
+        email: authUser.email || "",
+        name: authUser.email?.split("@")[0] || "User",
+        role: "user",
+        avatar: undefined,
+      })
       setProfile(null)
     }
   }
 
   useEffect(() => {
     let mounted = true
+    let initComplete = false
 
-    // Get initial session
-    const initAuth = async () => {
+    const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        // Get initial session
+        const { data: { session }, error } = await supabase.auth.getSession()
         
+        if (error) {
+          console.error("❌ Session error:", error)
+          setIsLoading(false)
+          return
+        }
+
         if (session?.user && mounted) {
           await loadProfile(session.user)
+        } else {
+          console.log("📭 No active session found")
         }
       } catch (error) {
         console.error("❌ Init auth error:", error)
       } finally {
         if (mounted) {
+          initComplete = true
           setIsLoading(false)
         }
       }
@@ -127,6 +161,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!mounted) return
 
       console.log("🔄 Auth event:", event)
+
+      // Don't process events during initial load
+      if (!initComplete && event === 'INITIAL_SESSION') {
+        return
+      }
 
       if (session?.user) {
         setIsLoading(true)
@@ -139,17 +178,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     })
 
-    initAuth()
+    // Initialize auth
+    initializeAuth()
+
+    // Cleanup timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.log("⚠️ Auth loading timeout, forcing completion")
+        setIsLoading(false)
+      }
+    }, 5000)
 
     return () => {
       mounted = false
       subscription.unsubscribe()
+      clearTimeout(timeoutId)
     }
   }, [])
 
-  // Auth operations
+  // Auth operations with simplified error handling
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      setIsLoading(true)
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       
       if (error) {
@@ -158,6 +208,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: error.message,
           variant: "destructive",
         })
+        setIsLoading(false)
         return false
       }
 
@@ -165,10 +216,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         title: "Berhasil!",
         description: "Selamat datang! Anda berhasil masuk ke akun.",
       })
-      navigate("/")
+      
+      // Don't navigate immediately, let auth state change handle it
       return true
     } catch (error) {
       console.error("❌ Login error:", error)
+      setIsLoading(false)
       return false
     }
   }
@@ -180,6 +233,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         password,
         options: {
           data: { full_name: name },
+          emailRedirectTo: `${window.location.origin}/`
         },
       })
 
@@ -210,7 +264,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
+      setIsLoading(true)
       await supabase.auth.signOut()
+      setUser(null)
+      setProfile(null)
+      setIsLoading(false)
+      
       toast({
         title: "Berhasil",
         description: "Anda telah keluar dari akun",
@@ -218,12 +277,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       navigate("/")
     } catch (error) {
       console.error("❌ Logout error:", error)
+      setIsLoading(false)
     }
   }
 
   const oauthLogin = async (provider: "google" | "github" | "facebook" | "twitter"): Promise<boolean> => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider })
+      const { error } = await supabase.auth.signInWithOAuth({ 
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      })
       return !error
     } catch (error) {
       console.error("❌ OAuth error:", error)

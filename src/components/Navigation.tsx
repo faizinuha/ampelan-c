@@ -42,7 +42,7 @@ const Navigation = () => {
   }
 
   // Cek apakah user sudah login dan profile sudah dimuat
-  const isAuthenticated = Boolean(user && profile && !isLoading)
+  const isAuthenticated = Boolean(user && !isLoading)
   
   // Show loading state while authentication is being determined
   if (isLoading) {
